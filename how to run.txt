@@ -1,0 +1,12 @@
+cd d:\Capstone\smartgate - location
+composer install
+cmd /c "npm install"
+copy .env.example .env
+php artisan key:generate
+php update_env.php
+php artisan serve
+cmd /c "npm run dev"
+
+Hardware Integration:
+9: (Optional) Install Python dependencies: pip install websockets pyserial
+10: (Optional) Run hardware bridge: python bridge_service.py

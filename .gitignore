@@ -1,0 +1,21 @@
+/smartgate/.env
+/smartgate/.env.backup
+/smartgate/.env.production
+/smartgate/node_modules/
+/smartgate/vendor/
+/smartgate/public/build/
+/smartgate/public/storage/
+/smartgate/storage/*.key
+/smartgate/storage/framework/cache/data/*
+/smartgate/storage/framework/sessions/*
+/smartgate/storage/framework/views/*
+/smartgate/storage/logs/*.log
+/smartgate/bootstrap/cache/*
+
+# Root specific
+node_modules/
+vendor/
+.vscode/
+.idea/
+*.log
+.DS_Store
