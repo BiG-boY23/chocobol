@@ -10,6 +10,7 @@ use App\Http\Controllers\Guard\DashboardController as GuardDashboard;
 Route::get('/', [App\Http\Controllers\LandingController::class, 'index'])->name('landing');
 Route::get('/online-registration', [App\Http\Controllers\LandingController::class, 'showRegistrationForm'])->name('online-registration');
 Route::post('/online-registration', [App\Http\Controllers\LandingController::class, 'submitRegistration'])->name('online-registration.submit');
+Route::post('/online-registration/validate-document', [App\Http\Controllers\LandingController::class, 'validateDocument'])->name('online-registration.validate');
 
 // Authentication Routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -41,6 +42,8 @@ Route::middleware(['role:office'])->prefix('office')->name('office.')->group(fun
     Route::get('/users', [OfficeDashboard::class, 'users'])->name('users');
     Route::get('/stats', [OfficeDashboard::class, 'stats'])->name('stats');
     Route::get('/check-tag', [OfficeDashboard::class, 'checkTag'])->name('registration.checkTag');
+    Route::post('/registration/{id}/verify', [OfficeDashboard::class, 'verify'])->name('registration.verify');
+    Route::post('/registration/{id}/reject', [OfficeDashboard::class, 'reject'])->name('registration.reject');
 });
 
 // Guard Routes

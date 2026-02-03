@@ -34,6 +34,21 @@
             Vehicles currently registered and valid
         </p>
     </div>
+
+    <!-- PENDING ONLINE REGISTRATIONS -->
+    <div class="stat-card" style="{{ ($pendingRegistrations ?? 0) > 0 ? 'border: 1px solid #741b1b; background: #fffcfc;' : '' }}">
+        <div class="stat-label">Pending Online</div>
+        <div style="font-size: 2rem; font-weight: 700; margin-top: 0.5rem; color: {{ ($pendingRegistrations ?? 0) > 0 ? '#741b1b' : 'inherit' }};">{{ $pendingRegistrations ?? 0 }}</div>
+        <i class="ph ph-fingerprint stat-icon" style="{{ ($pendingRegistrations ?? 0) > 0 ? 'color: #741b1b;' : '' }}"></i>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem;">
+            Applications waiting for verification
+        </p>
+        @if(($pendingRegistrations ?? 0) > 0)
+        <a href="{{ route('office.users') }}" style="display: block; margin-top: 0.5rem; font-size: 0.75rem; color: #741b1b; font-weight: 700; text-decoration: none;">
+            Review Now <i class="ph ph-arrow-right"></i>
+        </a>
+        @endif
+    </div>
 </div>
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">

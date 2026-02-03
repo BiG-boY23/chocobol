@@ -17,6 +17,7 @@ class DashboardController extends Controller
         $totalUsers = VehicleRegistration::count();
         $registeredToday = VehicleRegistration::whereDate('created_at', Carbon::today())->count();
         $activeVehicles = VehicleRegistration::where('status', 'approved')->count();
+        $pendingRegistrations = VehicleRegistration::where('status', 'pending')->count();
 
         // Quick summary by role (student, faculty, staff)
         $roleCounts = VehicleRegistration::selectRaw('role, COUNT(*) as total')
@@ -45,7 +46,7 @@ class DashboardController extends Controller
                 : 0;
         }
 
-        return view('office.dashboard', compact('totalUsers', 'registeredToday', 'activeVehicles', 'summary'));
+        return view('office.dashboard', compact('totalUsers', 'registeredToday', 'activeVehicles', 'summary', 'pendingRegistrations'));
     }
 
     public function registration(Request $request)
@@ -301,5 +302,54 @@ class DashboardController extends Controller
         }
 
         return response()->json(['exists' => false]);
+    }
+    public function verify($id)
+    {
+        $registration = VehicleRegistration::findOrFail($id);
+        
+        if ($registration->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This registration is already ' . $registration->status . '.'
+            ], 400);
+        }
+
+        $registration->update(['status' => 'verified']);
+
+        // Send Email
+        if ($registration->email_address && filter_var($registration->email_address, FILTER_VALIDATE_EMAIL)) {
+            \Illuminate\Support\Facades\Mail::to($registration->email_address)
+                ->send(new \App\Mail\RegistrationVerified($registration));
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Registration verified! An email has been sent to the applicant.'
+        ]);
+    }
+
+    public function reject(Request $request, $id)
+    {
+        $registration = VehicleRegistration::findOrFail($id);
+        
+        $request->validate([
+            'reason' => 'required|string|max:500'
+        ]);
+
+        $registration->update([
+            'status' => 'rejected',
+            'rejection_reason' => $request->reason
+        ]);
+
+        // Send Email
+        if ($registration->email_address && filter_var($registration->email_address, FILTER_VALIDATE_EMAIL)) {
+            \Illuminate\Support\Facades\Mail::to($registration->email_address)
+                ->send(new \App\Mail\RegistrationRejected($registration));
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Registration rejected and applicant notified.'
+        ]);
     }
 }

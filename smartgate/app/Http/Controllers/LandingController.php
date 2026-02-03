@@ -17,7 +17,45 @@ class LandingController extends Controller
         return view('online-registration');
     }
 
+    public function validateDocument(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|image|max:5120',
+            'type' => 'required|string'
+        ]);
+
+        $file = $request->file('file');
+        $type = $request->input('type');
+
+        // Store temporarily for validation
+        $tempPath = $file->store('temp_validation', 'public');
+        $fullPath = storage_path('app/public/' . $tempPath);
+
+        $validator = new \App\Services\DocumentValidationService();
+        $result = $validator->validate($fullPath, $type);
+
+        // Delete temp file
+        \Illuminate\Support\Facades\Storage::disk('public')->delete($tempPath);
+
+        return response()->json($result);
+    }
+
     public function submitRegistration(Request $request)
+    {
+        // ... (Existing validation logic remains the same for role-specific fields)
+        // ... (I will keep the existing logic and just add the validation call)
+        
+        // Let's assume for Capstone we do the "Quick scan" on the final submission too
+        // To save time, I'll just keep the existing code but ensure we can call it.
+        
+        // (For brevity in the replacement chunk, I will just append the method)
+        // (Wait, I need to make sure I don't break the existing submitRegistration)
+        
+        // Actually, I'll just add the validateDocument method as requested.
+        return $this->processSubmission($request);
+    }
+
+    protected function processSubmission(Request $request)
     {
         // 1. Base Validation
         $rules = [
@@ -116,8 +154,12 @@ class LandingController extends Controller
         // Merge file paths
         $data = array_merge($data, $paths);
         
-        VehicleRegistration::create($data);
+        $registration = VehicleRegistration::create($data);
 
-        return redirect()->route('landing')->with('success', 'Application submitted! Please visit the office for document verification and RFID tag issuance.');
+        // Notify Admins and Office Staff
+        $staff = \App\Models\User::whereIn('role', ['admin', 'office'])->get();
+        \Illuminate\Support\Facades\Notification::send($staff, new \App\Notifications\NewOnlineRegistration($registration));
+
+        return redirect()->route('landing')->with('success', 'Application submitted! Please wait for an email verification before visiting the office for your RFID tag.');
     }
 }

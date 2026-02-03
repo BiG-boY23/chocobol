@@ -162,6 +162,42 @@
             letter-spacing: 0.05em;
         }
 
+        .form-group.scanning {
+            position: relative;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .form-group.scanning::after {
+            content: '🔍 Scanning Document...';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            z-index: 10;
+            animation: pulse 1.5s infinite;
+        }
+
+        .validation-error {
+            color: #ef4444;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+            100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+        }
+
         @media (max-width: 600px) {
             .form-row {
                 grid-template-columns: 1fr;
@@ -345,17 +381,20 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Vehicle CR</label>
-                        <input type="file" name="cr_file" accept="image/*" required>
+                        <input type="file" name="cr_file" accept="image/*" required class="doc-input" data-type="cr_file">
+                        <div class="validation-error"></div>
                     </div>
                     <div class="form-group">
                         <label>Vehicle OR</label>
-                        <input type="file" name="or_file" accept="image/*" required>
+                        <input type="file" name="or_file" accept="image/*" required class="doc-input" data-type="or_file">
+                        <div class="validation-error"></div>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Valid Driver's License</label>
-                    <input type="file" name="license_file" accept="image/*" required>
+                    <input type="file" name="license_file" accept="image/*" required class="doc-input" data-type="license_file">
+                    <div class="validation-error"></div>
                 </div>
 
                 <div id="role-file-uploads">
@@ -378,7 +417,6 @@
                     facultyFields.style.display = role === 'faculty' ? 'block' : 'none';
                     staffFields.style.display = role === 'staff' ? 'block' : 'none';
 
-                    // Update required attributes
                     const studentInputs = studentFields.querySelectorAll('input, select');
                     const facultyInputs = facultyFields.querySelectorAll('input, select');
                     const staffInputs = staffFields.querySelectorAll('input, select');
@@ -387,35 +425,84 @@
                     facultyInputs.forEach(i => i.required = (role === 'faculty'));
                     staffInputs.forEach(i => i.required = (role === 'staff'));
 
-                    // Update shared inputs (Email might be required for some)
-                    // (User said email is mentioned for student and non-teaching, but email_address is common now)
-
-                    // Update Dynamic File Uploads
                     let fileHtml = '';
                     if (role === 'student') {
                         fileHtml = `
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>COM (Cert. of Matriculation)</label>
-                                    <input type="file" name="com_file" accept="image/*" required>
+                                    <input type="file" name="com_file" accept="image/*" required class="doc-input" data-type="com_file">
+                                    <div class="validation-error"></div>
                                 </div>
                                 <div class="form-group">
                                     <label>EVSU Student ID</label>
-                                    <input type="file" name="student_id_file" accept="image/*" required>
+                                    <input type="file" name="student_id_file" accept="image/*" required class="doc-input" data-type="student_id_file">
+                                    <div class="validation-error"></div>
                                 </div>
                             </div>`;
                     } else if (role === 'faculty' || role === 'staff') {
                         fileHtml = `
                             <div class="form-group">
                                 <label>EVSU Employee ID</label>
-                                <input type="file" name="employee_id_file" accept="image/*" required>
+                                <input type="file" name="employee_id_file" accept="image/*" required class="doc-input" data-type="employee_id_file">
+                                <div class="validation-error"></div>
                             </div>`;
                     }
                     roleFileUploads.innerHTML = fileHtml;
+                    attachValidationListeners();
+                }
+
+                function attachValidationListeners() {
+                    document.querySelectorAll('.doc-input').forEach(input => {
+                        if (input.dataset.listenerAttached) return;
+                        input.dataset.listenerAttached = "true";
+
+                        input.addEventListener('change', async function() {
+                            const file = this.files[0];
+                            if (!file) return;
+
+                            const type = this.dataset.type;
+                            const formGroup = this.closest('.form-group');
+                            const errorDiv = formGroup.querySelector('.validation-error');
+                            
+                            formGroup.classList.add('scanning');
+                            errorDiv.style.display = 'none';
+                            errorDiv.textContent = '';
+                            this.style.borderColor = '#e3e3e0';
+
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            formData.append('type', type);
+                            formData.append('_token', '{{ csrf_token() }}');
+
+                            try {
+                                const response = await fetch('{{ route("online-registration.validate") }}', {
+                                    method: 'POST',
+                                    body: formData,
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                                });
+
+                                const data = await response.json();
+                                
+                                if (data.success) {
+                                    this.style.borderColor = '#10b981';
+                                } else {
+                                    errorDiv.textContent = data.message;
+                                    errorDiv.style.display = 'block';
+                                    this.value = ''; 
+                                    this.style.borderColor = '#ef4444';
+                                }
+                            } catch (err) {
+                                console.error('Validation error:', err);
+                            } finally {
+                                formGroup.classList.remove('scanning');
+                            }
+                        });
+                    });
                 }
 
                 roleSelector.addEventListener('change', updateFields);
-                updateFields(); // Initial call
+                updateFields(); 
             </script>
         </div>
     </div>
