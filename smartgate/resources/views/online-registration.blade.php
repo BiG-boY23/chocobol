@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Online Registration | SmartGate</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -404,106 +405,157 @@
                 <button type="submit" class="btn-submit">Submit Registration</button>
             </form>
 
-            <script>
-                const roleSelector = document.getElementById('role-selector');
-                const studentFields = document.getElementById('student-fields');
-                const facultyFields = document.getElementById('faculty-fields');
-                const staffFields = document.getElementById('staff-fields');
-                const roleFileUploads = document.getElementById('role-file-uploads');
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-                function updateFields() {
-                    const role = roleSelector.value;
-                    studentFields.style.display = role === 'student' ? 'block' : 'none';
-                    facultyFields.style.display = role === 'faculty' ? 'block' : 'none';
-                    staffFields.style.display = role === 'staff' ? 'block' : 'none';
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const roleSelector = document.getElementById('role-selector');
+            const studentFields = document.getElementById('student-fields');
+            const facultyFields = document.getElementById('faculty-fields');
+            const staffFields = document.getElementById('staff-fields');
+            const roleFileUploads = document.getElementById('role-file-uploads');
+            const registrationForm = document.getElementById('registration-form');
 
-                    const studentInputs = studentFields.querySelectorAll('input, select');
-                    const facultyInputs = facultyFields.querySelectorAll('input, select');
-                    const staffInputs = staffFields.querySelectorAll('input, select');
+            // Handle Laravel Session Success/Error
+            @if(session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Registration Successful!',
+                    text: "{{ session('success') }}",
+                    confirmButtonColor: '#741b1b'
+                });
+            @endif
 
-                    studentInputs.forEach(i => i.required = (role === 'student'));
-                    facultyInputs.forEach(i => i.required = (role === 'faculty'));
-                    staffInputs.forEach(i => i.required = (role === 'staff'));
+            @if($errors->any())
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validation Error',
+                    text: 'Please check the form for errors and try again.',
+                    confirmButtonColor: '#741b1b'
+                });
+            @endif
 
-                    let fileHtml = '';
-                    if (role === 'student') {
-                        fileHtml = `
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>COM (Cert. of Matriculation)</label>
-                                    <input type="file" name="com_file" accept="image/*" required class="doc-input" data-type="com_file">
-                                    <div class="validation-error"></div>
-                                </div>
-                                <div class="form-group">
-                                    <label>EVSU Student ID</label>
-                                    <input type="file" name="student_id_file" accept="image/*" required class="doc-input" data-type="student_id_file">
-                                    <div class="validation-error"></div>
-                                </div>
-                            </div>`;
-                    } else if (role === 'faculty' || role === 'staff') {
-                        fileHtml = `
+            function updateFields() {
+                const role = roleSelector.value;
+                studentFields.style.display = role === 'student' ? 'block' : 'none';
+                facultyFields.style.display = role === 'faculty' ? 'block' : 'none';
+                staffFields.style.display = role === 'staff' ? 'block' : 'none';
+
+                const studentInputs = studentFields.querySelectorAll('input, select');
+                const facultyInputs = facultyFields.querySelectorAll('input, select');
+                const staffInputs = staffFields.querySelectorAll('input, select');
+
+                studentInputs.forEach(i => i.required = (role === 'student'));
+                facultyInputs.forEach(i => i.required = (role === 'faculty'));
+                staffInputs.forEach(i => i.required = (role === 'staff'));
+
+                let fileHtml = '';
+                if (role === 'student') {
+                    fileHtml = `
+                        <div class="form-row">
                             <div class="form-group">
-                                <label>EVSU Employee ID</label>
-                                <input type="file" name="employee_id_file" accept="image/*" required class="doc-input" data-type="employee_id_file">
+                                <label>COM (Cert. of Matriculation)</label>
+                                <input type="file" name="com_file" accept="image/*" required class="doc-input" data-type="com_file">
                                 <div class="validation-error"></div>
-                            </div>`;
-                    }
-                    roleFileUploads.innerHTML = fileHtml;
-                    attachValidationListeners();
+                            </div>
+                            <div class="form-group">
+                                <label>EVSU Student ID</label>
+                                <input type="file" name="student_id_file" accept="image/*" required class="doc-input" data-type="student_id_file">
+                                <div class="validation-error"></div>
+                            </div>
+                        </div>`;
+                } else if (role === 'faculty' || role === 'staff') {
+                    fileHtml = `
+                        <div class="form-group">
+                            <label>EVSU Employee ID</label>
+                            <input type="file" name="employee_id_file" accept="image/*" required class="doc-input" data-type="employee_id_file">
+                            <div class="validation-error"></div>
+                        </div>`;
                 }
+                roleFileUploads.innerHTML = fileHtml;
+                attachValidationListeners();
+            }
 
-                function attachValidationListeners() {
-                    document.querySelectorAll('.doc-input').forEach(input => {
-                        if (input.dataset.listenerAttached) return;
-                        input.dataset.listenerAttached = "true";
+            function attachValidationListeners() {
+                document.querySelectorAll('.doc-input').forEach(input => {
+                    if (input.dataset.listenerAttached) return;
+                    input.dataset.listenerAttached = "true";
 
-                        input.addEventListener('change', async function() {
-                            const file = this.files[0];
-                            if (!file) return;
+                    input.addEventListener('change', async function() {
+                        const file = this.files[0];
+                        if (!file) return;
 
-                            const type = this.dataset.type;
-                            const formGroup = this.closest('.form-group');
-                            const errorDiv = formGroup.querySelector('.validation-error');
+                        const type = this.dataset.type;
+                        const formGroup = this.closest('.form-group');
+                        const errorDiv = formGroup.querySelector('.validation-error');
+                        
+                        formGroup.classList.add('scanning');
+                        errorDiv.style.display = 'none';
+                        errorDiv.textContent = '';
+                        this.style.borderColor = '#e3e3e0';
+
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('type', type);
+                        formData.append('_token', '{{ csrf_token() }}');
+
+                        try {
+                            const response = await fetch('{{ route("online-registration.validate") }}', {
+                                method: 'POST',
+                                body: formData,
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                            });
+
+                            const data = await response.json();
                             
-                            formGroup.classList.add('scanning');
-                            errorDiv.style.display = 'none';
-                            errorDiv.textContent = '';
-                            this.style.borderColor = '#e3e3e0';
-
-                            const formData = new FormData();
-                            formData.append('file', file);
-                            formData.append('type', type);
-                            formData.append('_token', '{{ csrf_token() }}');
-
-                            try {
-                                const response = await fetch('{{ route("online-registration.validate") }}', {
-                                    method: 'POST',
-                                    body: formData,
-                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                            if (data.success) {
+                                this.style.borderColor = '#10b981';
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Document Validated!',
+                                    text: 'Everything looks good.',
+                                    timer: 1500,
+                                    showConfirmButton: false,
+                                    toast: true,
+                                    position: 'top-end'
                                 });
-
-                                const data = await response.json();
-                                
-                                if (data.success) {
-                                    this.style.borderColor = '#10b981';
-                                } else {
-                                    errorDiv.textContent = data.message;
-                                    errorDiv.style.display = 'block';
-                                    this.value = ''; 
-                                    this.style.borderColor = '#ef4444';
-                                }
-                            } catch (err) {
-                                console.error('Validation error:', err);
-                            } finally {
-                                formGroup.classList.remove('scanning');
+                            } else {
+                                errorDiv.textContent = data.message;
+                                errorDiv.style.display = 'block';
+                                this.value = ''; 
+                                this.style.borderColor = '#ef4444';
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Invalid Document',
+                                    text: data.message,
+                                    confirmButtonColor: '#741b1b'
+                                });
                             }
-                        });
+                        } catch (err) {
+                            console.error('Validation error:', err);
+                        } finally {
+                            formGroup.classList.remove('scanning');
+                        }
                     });
-                }
+                });
+            }
 
-                roleSelector.addEventListener('change', updateFields);
-                updateFields(); 
-            </script>
+            roleSelector.addEventListener('change', updateFields);
+            updateFields();
+
+            // Handle Final Form Submission
+            registrationForm.addEventListener('submit', function(e) {
+                Swal.fire({
+                    title: 'Submitting Registration...',
+                    text: 'Please wait while we process your documents.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            });
+        });
+    </script>
         </div>
     </div>
 </body>

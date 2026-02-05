@@ -44,6 +44,7 @@ Route::middleware(['role:office'])->prefix('office')->name('office.')->group(fun
     Route::get('/check-tag', [OfficeDashboard::class, 'checkTag'])->name('registration.checkTag');
     Route::post('/registration/{id}/verify', [OfficeDashboard::class, 'verify'])->name('registration.verify');
     Route::post('/registration/{id}/reject', [OfficeDashboard::class, 'reject'])->name('registration.reject');
+    Route::post('/registration/validate-stored/{id}/{type}', [OfficeDashboard::class, 'validateStoredDocument'])->name('registration.validate-stored');
 });
 
 // Guard Routes

@@ -27,9 +27,9 @@ class LoginController extends Controller
             Session::put('role', $user->role);
             
             // Redirect based on role
-            if ($user->role === 'admin') return redirect()->route('admin.dashboard');
-            if ($user->role === 'office') return redirect()->route('office.dashboard');
-            if ($user->role === 'guard') return redirect()->route('guard.dashboard');
+            if ($user->role === 'admin') return redirect()->route('admin.dashboard')->with('success', "Welcome back, $fullName!");
+            if ($user->role === 'office') return redirect()->route('office.dashboard')->with('success', "Welcome back, $fullName!");
+            if ($user->role === 'guard') return redirect()->route('guard.dashboard')->with('success', "Welcome back, $fullName!");
         }
 
         return back()->withErrors(['username' => 'Invalid credentials. Try admin/password, office/password, or guard/password.']);
@@ -37,7 +37,8 @@ class LoginController extends Controller
 
     public function logout()
     {
+        Auth::logout();
         Session::flush();
-        return redirect()->route('login');
+        return redirect()->route('landing')->with('success', 'Logged out successfully. Have a nice day!');
     }
 }

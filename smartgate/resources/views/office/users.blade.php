@@ -131,20 +131,52 @@
                 <p><strong>Role:</strong> <span id="v-role"></span></p>
                 <div class="document-previews" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
                     <div id="v-cr-sect">
-                        <label>Vehicle CR</label>
-                        <img id="v-cr" src="" style="width: 100%; border-radius: 8px; border: 1px solid #ddd;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <label>Vehicle CR</label>
+                            <button type="button" class="btn-ai-check" data-type="cr_file" data-img-id="v-cr" style="font-size:0.7rem; padding:2px 6px; border-radius:4px; background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd; cursor:pointer;">
+                                <i class="ph ph-sparkle"></i> AI Scan
+                            </button>
+                        </div>
+                        <div style="position:relative;">
+                            <img id="v-cr" src="" style="width: 100%; border-radius: 8px; border: 1px solid #ddd;">
+                            <div class="ai-result-badge" id="v-cr-result" style="display:none; position:absolute; bottom:8px; right:8px; padding:4px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;"></div>
+                        </div>
                     </div>
                     <div id="v-or-sect">
-                        <label>Vehicle OR</label>
-                        <img id="v-or" src="" style="width: 100%; border-radius: 8px; border: 1px solid #ddd;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <label>Vehicle OR</label>
+                            <button type="button" class="btn-ai-check" data-type="or_file" data-img-id="v-or" style="font-size:0.7rem; padding:2px 6px; border-radius:4px; background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd; cursor:pointer;">
+                                <i class="ph ph-sparkle"></i> AI Scan
+                            </button>
+                        </div>
+                        <div style="position:relative;">
+                            <img id="v-or" src="" style="width: 100%; border-radius: 8px; border: 1px solid #ddd;">
+                            <div class="ai-result-badge" id="v-or-result" style="display:none; position:absolute; bottom:8px; right:8px; padding:4px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;"></div>
+                        </div>
                     </div>
                     <div id="v-license-sect">
-                        <label>Driver's License</label>
-                        <img id="v-license" src="" style="width: 100%; border-radius: 8px; border: 1px solid #ddd;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <label>Driver's License</label>
+                            <button type="button" class="btn-ai-check" data-type="license_file" data-img-id="v-license" style="font-size:0.7rem; padding:2px 6px; border-radius:4px; background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd; cursor:pointer;">
+                                <i class="ph ph-sparkle"></i> AI Scan
+                            </button>
+                        </div>
+                        <div style="position:relative;">
+                            <img id="v-license" src="" style="width: 100%; border-radius: 8px; border: 1px solid #ddd;">
+                            <div class="ai-result-badge" id="v-license-result" style="display:none; position:absolute; bottom:8px; right:8px; padding:4px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;"></div>
+                        </div>
                     </div>
                     <div id="v-extra-sect">
-                        <label id="v-extra-label">Other Document</label>
-                        <img id="v-extra" src="" style="width: 100%; border-radius: 8px; border: 1px solid #ddd;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <label id="v-extra-label">Other Document</label>
+                            <button type="button" class="btn-ai-check" data-type="extra" data-img-id="v-extra" style="font-size:0.7rem; padding:2px 6px; border-radius:4px; background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd; cursor:pointer;">
+                                <i class="ph ph-sparkle"></i> AI Scan
+                            </button>
+                        </div>
+                        <div style="position:relative;">
+                            <img id="v-extra" src="" style="width: 100%; border-radius: 8px; border: 1px solid #ddd;">
+                            <div class="ai-result-badge" id="v-extra-result" style="display:none; position:absolute; bottom:8px; right:8px; padding:4px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -161,7 +193,35 @@
     </div>
 </div>
 
+<!-- ZOOM MODAL -->
+<div id="zoomModal" class="modal-overlay" style="display:none; z-index: 2000; background: rgba(0,0,0,0.9);">
+    <div style="position: absolute; top: 1rem; right: 2rem; display: flex; gap: 1rem; align-items: center;">
+        <div style="background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 99px; color: white; display: flex; gap: 1rem; border: 1px solid rgba(255,255,255,0.2);">
+            <button id="zoomOut" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph-bold ph-minus"></i></button>
+            <span id="zoomLevel">100%</span>
+            <button id="zoomIn" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph-bold ph-plus"></i></button>
+        </div>
+        <button class="close-zoom" style="background: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+    </div>
+    <div id="zoomContainer" style="width: 90vw; height: 85vh; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: grab;">
+        <img id="zoomedImg" src="" style="max-width: 90%; max-height: 90%; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform-origin: center;">
+    </div>
+</div>
+
 <style>
+    /* Zoom Modal Helper Styles */
+    .document-previews img {
+        cursor: zoom-in;
+        transition: transform 0.2s;
+    }
+    .document-previews img:hover {
+        transform: scale(1.02);
+        border-color: #3b82f6 !important;
+    }
+    #zoomContainer:active {
+        cursor: grabbing;
+    }
+
     .table-container {
         background: #fff;
         border: 1px solid #e2e8f0;
@@ -298,8 +358,19 @@
         const rows = document.querySelectorAll(".user-row");
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-        function toast(msg) {
-            alert(msg);
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+        });
+
+        function toast(msg, icon = 'success') {
+            Toast.fire({
+                icon: icon,
+                title: msg
+            });
         }
 
         const verifyModal = document.getElementById('verifyModal');
@@ -337,6 +408,12 @@
                         document.getElementById('v-extra-sect').style.display = 'none';
                     }
 
+                    // Reset badges
+                    document.querySelectorAll('.ai-result-badge').forEach(b => {
+                        b.style.display = 'none';
+                        b.textContent = '';
+                    });
+
                     // Reset modal state
                     rejectionForm.style.display = 'none';
                     confirmRejectBtn.style.display = 'none';
@@ -344,6 +421,52 @@
                     showRejectBtn.style.display = 'block';
 
                     verifyModal.style.display = 'flex';
+                });
+            });
+
+            // AI Check Integration
+            document.querySelectorAll('.btn-ai-check').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    if (!currentVerifyId) return;
+                    
+                    const type = this.dataset.type;
+                    const resultBadge = document.getElementById(this.dataset.imgId + '-result');
+                    const originalHtml = this.innerHTML;
+
+                    this.disabled = true;
+                    this.innerHTML = '<i class="ph ph-spinner-gap animate-spin"></i> Scanning...';
+                    
+                    resultBadge.style.display = 'block';
+                    resultBadge.textContent = 'Scanning...';
+                    resultBadge.style.background = '#f1f5f9';
+                    resultBadge.style.color = '#64748b';
+
+                    try {
+                        const response = await fetch(`/office/registration/validate-stored/${currentVerifyId}/${type}`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        const data = await response.json();
+
+                        if (data.success) {
+                            resultBadge.textContent = 'MATCHED';
+                            resultBadge.style.background = '#dcfce7';
+                            resultBadge.style.color = '#166534';
+                        } else {
+                            resultBadge.textContent = 'INVALID: ' + (data.message.includes('look like') || data.message.includes('appear') ? 'Mismatch' : 'Failed');
+                            resultBadge.style.background = '#fee2e2';
+                            resultBadge.style.color = '#991b1b';
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        resultBadge.textContent = 'ERROR';
+                    } finally {
+                        this.disabled = false;
+                        this.innerHTML = originalHtml;
+                    }
                 });
             });
 
@@ -364,7 +487,7 @@
                 confirmRejectBtn.disabled = true;
                 confirmRejectBtn.textContent = 'Rejecting...';
 
-                fetch(`{{ url('office/registration') }}/${currentVerifyId}/reject`, {
+                fetch(`/office/registration/${currentVerifyId}/reject`, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': csrfToken,
@@ -393,7 +516,7 @@
                 confirmVerifyBtn.disabled = true;
                 confirmVerifyBtn.textContent = 'Verifying...';
 
-                fetch(`{{ url('office/registration') }}/${currentVerifyId}/verify`, {
+                fetch(`/office/registration/${currentVerifyId}/verify`, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': csrfToken,
@@ -421,26 +544,98 @@
                     const row = btn.closest('.user-row');
                     const name = row.dataset.name;
                     const id = row.dataset.id;
-                    if (confirm(`Delete registration for ${name}? (ID: ${id})`)) {
-                        fetch(`{{ url('office/registration') }}/${id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': csrfToken,
-                                'X-Requested-With': 'XMLHttpRequest',
-                            }
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (!data.success) throw new Error(data.message || 'Delete failed');
-                            row.remove();
-                            toast('Registration deleted.');
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            toast('Error deleting registration.');
-                        });
-                    }
+                    
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: `You are about to delete the registration for ${name}. This cannot be undone!`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#b91c1c',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Yes, delete it!'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            fetch(`/office/registration/${id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                }
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (!data.success) throw new Error(data.message || 'Delete failed');
+                                row.remove();
+                                toast('Registration deleted.');
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                toast('Error deleting registration.', 'error');
+                            });
+                        }
+                    });
                 });
+            });
+
+            // ZOOM LOGIC
+            const zoomModal = document.getElementById('zoomModal');
+            const zoomedImg = document.getElementById('zoomedImg');
+            const zoomInBtn = document.getElementById('zoomIn');
+            const zoomOutBtn = document.getElementById('zoomOut');
+            const zoomLevelText = document.getElementById('zoomLevel');
+            const zoomContainer = document.getElementById('zoomContainer');
+            
+            let scale = 1;
+            let isDragging = false;
+            let startX, startY, translateX = 0, translateY = 0;
+
+            document.querySelectorAll('.document-previews img').forEach(img => {
+                img.addEventListener('click', function() {
+                    if (!this.src || this.src.includes('undefined')) return;
+                    zoomedImg.src = this.src;
+                    scale = 1;
+                    translateX = 0;
+                    translateY = 0;
+                    updateZoomTransform();
+                    zoomModal.style.display = 'flex';
+                });
+            });
+
+            function updateZoomTransform() {
+                zoomedImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+                zoomLevelText.textContent = `${Math.round(scale * 100)}%`;
+            }
+
+            zoomInBtn.addEventListener('click', () => { scale += 0.2; updateZoomTransform(); });
+            zoomOutBtn.addEventListener('click', () => { if (scale > 0.4) scale -= 0.2; updateZoomTransform(); });
+
+            document.querySelector('.close-zoom').addEventListener('click', () => {
+                zoomModal.style.display = 'none';
+            });
+
+            // Dragging Logic
+            zoomContainer.addEventListener('mousedown', (e) => {
+                if (scale <= 1) return;
+                isDragging = true;
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+                updateZoomTransform();
+            });
+
+            window.addEventListener('mouseup', () => isDragging = false);
+
+            // Scroll to zoom
+            zoomContainer.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                scale = Math.min(Math.max(0.4, scale + delta), 4);
+                updateZoomTransform();
             });
         }
 

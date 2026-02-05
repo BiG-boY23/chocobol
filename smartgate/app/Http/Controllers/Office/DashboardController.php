@@ -352,4 +352,43 @@ class DashboardController extends Controller
             'message' => 'Registration rejected and applicant notified.'
         ]);
     }
+
+    public function validateStoredDocument($id, $type)
+    {
+        $registration = VehicleRegistration::findOrFail($id);
+        
+        $pathMap = [
+            'cr_file' => 'cr_path',
+            'or_file' => 'or_path',
+            'license_file' => 'license_path',
+            'com_file' => 'com_path',
+            'student_id_file' => 'student_id_path',
+            'employee_id_file' => 'employee_id_path',
+            'extra' => ['com_path', 'employee_id_path', 'student_id_path']
+        ];
+
+        $path = null;
+        if ($type === 'extra') {
+            foreach ($pathMap['extra'] as $f) {
+                if ($registration->$f) {
+                    $path = $registration->$f;
+                    $type = str_replace('_path', '', $f);
+                    break;
+                }
+            }
+        } else {
+            $column = $pathMap[$type] ?? null;
+            $path = $column ? $registration->$column : null;
+        }
+
+        if (!$path || !\Storage::exists($path)) {
+            return response()->json(['success' => false, 'message' => 'File not found.']);
+        }
+
+        $validator = new \App\Services\DocumentValidationService();
+        $fullPath = storage_path('app/' . $path);
+        
+        $result = $validator->validate($fullPath, $type);
+        return response()->json($result);
+    }
 }

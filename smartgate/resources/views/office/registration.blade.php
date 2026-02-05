@@ -188,10 +188,10 @@
         <!-- ================= REQUIREMENTS SUBMITTED ================= -->
         <section class="form-section">
             <h2 class="section-title">
-                <i class="ph ph-file-check"></i> Requirements Submitted
+                <i class="ph ph-file-check"></i> Requirements & Document Scan
             </h2>
 
-            <div class="checkbox-grid">
+            <div class="checkbox-grid mb-6">
                 <label class="checkbox-option">
                     <input type="checkbox" name="requirements[]" value="certificateOfRegistration">
                     <span>Certificate of Registration</span>
@@ -212,6 +212,24 @@
                     <input type="checkbox" name="requirements[]" value="businessPermit">
                     <span>Business Permit</span>
                 </label>
+            </div>
+
+            <div class="document-upload-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px dashed #cbd5e1;">
+                <div class="form-group">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Scan Vehicle CR</label>
+                    <input type="file" class="doc-input" data-type="cr_file" style="font-size: 0.8rem;">
+                    <div class="validation-error" style="color: #ef4444; font-size: 0.75rem; margin-top: 4px; display: none;"></div>
+                </div>
+                <div class="form-group">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Scan Vehicle OR</label>
+                    <input type="file" class="doc-input" data-type="or_file" style="font-size: 0.8rem;">
+                    <div class="validation-error" style="color: #ef4444; font-size: 0.75rem; margin-top: 4px; display: none;"></div>
+                </div>
+                <div class="form-group">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Scan Driver's License</label>
+                    <input type="file" class="doc-input" data-type="license_file" style="font-size: 0.8rem;">
+                    <div class="validation-error" style="color: #ef4444; font-size: 0.75rem; margin-top: 4px; display: none;"></div>
+                </div>
             </div>
         </section>
 
@@ -335,6 +353,38 @@
     }
     .hidden {
         display: none !important;
+    }
+    .form-group.scanning {
+        position: relative;
+        opacity: 0.7;
+        pointer-events: none;
+    }
+    .form-group.scanning::after {
+        content: "SCANNING...";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(30, 41, 59, 0.9);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
+    }
+    .validation-error {
+        animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     .toast {
         position: fixed;
@@ -525,15 +575,19 @@
         const toastMsg = document.getElementById('registrationSuccessMessage');
         const toastCloseBtn = document.getElementById('toastCloseBtn');
 
-        function showToast(message) {
-            if (!toast) return;
-            toastMsg.textContent = message;
-            toast.classList.remove('hidden');
-            toast.classList.add('visible');
-            setTimeout(() => {
-                toast.classList.remove('visible');
-                toast.classList.add('hidden');
-            }, 4000);
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+        });
+
+        function showToast(msg, icon = 'success') {
+            Toast.fire({
+                icon: icon,
+                title: msg
+            });
         }
 
         if (toastCloseBtn) {
@@ -845,6 +899,66 @@
         }
 
         prefillForm();
+
+        // Document Validation for Office
+        document.querySelectorAll('.doc-input').forEach(input => {
+            input.addEventListener('change', async function() {
+                const file = this.files[0];
+                if (!file) return;
+
+                const type = this.dataset.type;
+                const formGroup = this.closest('.form-group');
+                const errorDiv = formGroup.querySelector('.validation-error');
+                
+                formGroup.classList.add('scanning');
+                errorDiv.style.display = 'none';
+                errorDiv.textContent = '';
+                this.style.borderColor = '#e2e8f0';
+
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('type', type);
+                formData.append('_token', '{{ csrf_token() }}');
+
+                try {
+                    const response = await fetch('{{ route("online-registration.validate") }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.style.borderColor = '#10b981';
+                        showToast('Document Validated!', 'success');
+                        // Auto-check the corresponding requirement if scan matches
+                        const reqVal = type === 'cr_file' ? 'certificateOfRegistration' : 
+                                     type === 'or_file' ? 'officialReceipt' : 
+                                     type === 'license_file' ? 'driversLicense' : '';
+                        if (reqVal) {
+                            const cb = document.querySelector(`input[name="requirements[]"][value="${reqVal}"]`);
+                            if (cb) cb.checked = true;
+                        }
+                    } else {
+                        errorDiv.textContent = data.message;
+                        errorDiv.style.display = 'block';
+                        this.value = ''; 
+                        this.style.borderColor = '#ef4444';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Invalid Document',
+                            text: data.message,
+                            confirmButtonColor: '#741b1b'
+                        });
+                    }
+                } catch (err) {
+                    console.error('Validation error:', err);
+                } finally {
+                    formGroup.classList.remove('scanning');
+                }
+            });
+        });
     });
 </script>
 

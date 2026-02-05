@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - SmartGate</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         body {
@@ -118,8 +119,30 @@
             <p style="color: #64748b; font-size: 0.9rem;">Sign in to your account</p>
         </div>
 
+        @if(session('success'))
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: "{{ session('success') }}",
+                        confirmButtonColor: '#741b1b'
+                    });
+                });
+            </script>
+        @endif
+
         @if($errors->any())
-            <div class="error-msg">{{ $errors->first() }}</div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Login Failed',
+                        text: "{{ $errors->first() }}",
+                        confirmButtonColor: '#741b1b'
+                    });
+                });
+            </script>
         @endif
 
         <form method="POST" action="{{ route('login') }}">

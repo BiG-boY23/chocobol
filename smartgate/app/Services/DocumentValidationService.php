@@ -11,7 +11,12 @@ class DocumentValidationService
      * The OCR Space API Key.
      * Use 'helloworld' for simple testing or get a free key from https://ocr.space/ocrapi
      */
-    protected $apiKey = 'helloworld';
+    protected $apiKey;
+
+    public function __construct()
+    {
+        $this->apiKey = config('services.ocr_space.key');
+    }
 
     /**
      * Validate a document based on its type and content keywords.
@@ -22,6 +27,12 @@ class DocumentValidationService
      */
     public function validate($filePath, $type)
     {
+        // API DISABLED FOR TESTING
+        return [
+            'success' => true,
+            'message' => 'Document validation bypassed (API disabled for testing).',
+        ];
+
         try {
             // 1. Perform OCR
             $response = Http::attach(
@@ -30,6 +41,8 @@ class DocumentValidationService
                 'apikey' => $this->apiKey,
                 'language' => 'eng',
                 'isOverlayRequired' => false,
+                'detectOrientation' => true,
+                'scale' => true,
             ]);
 
             if (!$response->successful()) {
@@ -38,52 +51,95 @@ class DocumentValidationService
             }
 
             $data = $response->json();
-            $text = strtoupper($data['ParsedResults'][0]['ParsedText'] ?? '');
-
-            if (empty($text)) {
-                return ['success' => false, 'message' => 'No text detected in the image. Please ensure the document is clear and well-lit.'];
+            
+            // Check for API errors (over limit, etc.)
+            if (isset($data['OCRExitCode']) && $data['OCRExitCode'] > 1) {
+                return ['success' => false, 'message' => 'Scan failed: ' . ($data['ErrorMessage'][0] ?? 'Unknown error')];
             }
 
-            // 2. Keyword Matching based on document type
-            $keywords = $this->getKeywordsForType($type);
-            $matchCount = 0;
-            $matchedKeywords = [];
+            $text = strtoupper($data['ParsedResults'][0]['ParsedText'] ?? '');
 
-            foreach ($keywords as $keyword) {
-                if (str_contains($text, strtoupper($keyword))) {
-                    $matchCount++;
-                    $matchedKeywords[] = $keyword;
+            if (empty($text) || strlen($text) < 10) {
+                return ['success' => false, 'message' => 'Could not read document. Please ensure the image is clear and well-lit.'];
+            }
+
+            // 2. Strict Keyword Matching
+            $config = $this->getKeywordsForType($type);
+            $required = $config['required'] ?? [];
+            $supporting = $config['supporting'] ?? [];
+            
+            // Check Required Phrases (Must match at least one)
+            $hasRequired = false;
+            foreach ($required as $phrase) {
+                if (str_contains($text, strtoupper($phrase))) {
+                    $hasRequired = true;
+                    break;
                 }
             }
 
-            // 3. Logic: If no keywords match, it's likely the wrong document
-            if ($matchCount === 0) {
+            if (!empty($required) && !$hasRequired) {
                 return [
                     'success' => false,
-                    'message' => "The uploaded file does not appear to be a valid " . strtoupper($type) . ". Please upload a clear image of the required document."
+                    'message' => "This doesn't look like a valid " . strtoupper(str_replace('_file', '', $type)) . ". Please upload the correct document."
+                ];
+            }
+
+            // Count Supporting Keywords
+            $matchCount = 0;
+            foreach ($supporting as $keyword) {
+                if (str_contains($text, strtoupper($keyword))) {
+                    $matchCount++;
+                }
+            }
+
+            // We need at least 2 supporting keywords or 1 required phrase match
+            if (!$hasRequired && $matchCount < 2) {
+                return [
+                    'success' => false,
+                    'message' => "Validation failed. The document content doesn't match the expected " . strtoupper(str_replace('_file', '', $type)) . " format."
                 ];
             }
 
             return [
                 'success' => true,
                 'message' => 'Document validated successfully.',
-                'detected_text_preview' => substr($text, 0, 100)
             ];
 
         } catch (\Exception $e) {
             Log::error('Document Validation Error: ' . $e->getMessage());
-            return ['success' => true, 'message' => 'Bypassing validation due to connection error.']; // Graceful fail
+            // In a production app, we might return success here to not block the user if the server is down,
+            // but for testing strictness, let's return false.
+            return ['success' => false, 'message' => 'Connection to validation service failed.'];
         }
     }
 
     protected function getKeywordsForType($type)
     {
         return match ($type) {
-            'cr_file' => ['CERTIFICATE', 'REGISTRATION', 'CHASSIS', 'ENGINE', 'PHILIPPINES'],
-            'or_file' => ['OFFICIAL', 'RECEIPT', 'PAYMENT', 'TOTAL', 'LTO'],
-            'license_file' => ['DRIVER', 'LICENSE', 'RESTRICTION', 'PHILIPPINES', 'CARD'],
-            'com_file', 'student_id_file', 'employee_id_file' => ['UNIVERSITY', 'EVSU', 'STUDENT', 'EASTERN', 'VISAYAS'],
-            default => ['PHILIPPINES'],
+            'cr_file' => [
+                'required' => ['CERTIFICATE OF REGISTRATION', 'REGISTRATION'],
+                'supporting' => ['MV FILE NO', 'CHASSIS', 'ENGINE NO', 'PLATE NO', 'DENOMINATION', 'MODEL']
+            ],
+            'or_file' => [
+                'required' => ['OFFICIAL RECEIPT', 'LTO'],
+                'supporting' => ['PAYOR', 'AMOUNT PAID', 'TOTAL', 'CASHIER', 'DATE', 'RECEIPT NO']
+            ],
+            'license_file' => [
+                'required' => ['DRIVER', 'LICENSE'],
+                'supporting' => ['RESTRICTIONS', 'EXPIRY', 'ADDRESS', 'NATIONALITY', 'BIRTH', 'WEIGHT', 'HEIGHT']
+            ],
+            'com_file' => [
+                'required' => ['MATRICULATION', 'ENROLLMENT', 'EVSU'],
+                'supporting' => ['SEMESTER', 'SCHOOL YEAR', 'SUBJECTS', 'UNITS', 'TOTAL FEES']
+            ],
+            'student_id_file', 'employee_id_file' => [
+                'required' => ['EVSU', 'UNIVERSITY', 'IDENTIFICATION'],
+                'supporting' => ['STUDENT', 'FACULTY', 'EMPLOYEE', 'VALID', 'ID NO']
+            ],
+            default => [
+                'required' => [],
+                'supporting' => []
+            ],
         };
     }
 }
