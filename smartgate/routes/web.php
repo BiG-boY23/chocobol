@@ -25,9 +25,11 @@ Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(functi
     Route::put('/users/{id}', [AdminDashboard::class, 'updateUser'])->name('users.update');
     Route::delete('/users/{id}', [AdminDashboard::class, 'deleteUser'])->name('users.delete');
     Route::get('/rfid', [AdminDashboard::class, 'rfid'])->name('rfid');
+    Route::post('/rfid', [AdminDashboard::class, 'storeRegistration'])->name('rfid.store');
     Route::post('/rfid/{id}/toggle-status', [AdminDashboard::class, 'toggleStatus'])->name('rfid.toggle-status');
     Route::get('/rfid/{id}', [AdminDashboard::class, 'showRegistration'])->name('rfid.show');
     Route::get('/reports', [AdminDashboard::class, 'reports'])->name('reports');
+    Route::get('/check-tag', [OfficeDashboard::class, 'checkTag'])->name('check-tag');
     Route::get('/settings', [AdminDashboard::class, 'settings'])->name('settings');
 });
 

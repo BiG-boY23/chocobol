@@ -175,6 +175,51 @@ class DashboardController extends Controller
         return view('admin.rfid', compact('registrations', 'stats'));
     }
 
+    public function storeRegistration(Request $request)
+    {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'role' => 'required|in:student,faculty,staff',
+            'fullName' => 'required|string|max:255',
+            'contactNumber' => 'required|string|max:20',
+            'emailAddress' => 'nullable|email|max:255',
+            'vehicleType' => 'required|in:car,suv,van,motorcycle',
+            'makeBrand' => 'required|string|max:255',
+            'plateNumber' => 'required|string|max:20',
+            'rfidTagId' => 'required|string|unique:vehicle_registrations,rfid_tag_id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $data = [
+            'role' => $request->role,
+            'full_name' => $request->fullName,
+            'university_id' => $request->universityId ?? 'N/A',
+            'college_dept' => $request->collegeDept ?? 'N/A',
+            'contact_number' => $request->contactNumber,
+            'email_address' => $request->emailAddress ?? 'N/A',
+            'vehicle_type' => $request->vehicleType,
+            'make_brand' => $request->makeBrand,
+            'plate_number' => $request->plateNumber,
+            'rfid_tag_id' => $request->rfidTagId,
+            'status' => 'approved',
+            'office_user_id' => Auth::id(),
+            'validity_from' => now(),
+            'validity_to' => now()->addYear(),
+        ];
+
+        VehicleRegistration::create($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tag Registered successfully and is now active.'
+        ]);
+    }
+
     public function toggleStatus(Request $request, $id)
     {
         $registration = VehicleRegistration::findOrFail($id);

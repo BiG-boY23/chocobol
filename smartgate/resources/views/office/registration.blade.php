@@ -260,24 +260,60 @@
                 <i class="ph ph-identification-card"></i> RFID Tag Assignment
             </h2>
             <div class="tag-scanner-box">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px dashed #e2e8f0;">
-                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Hardware Reader Link</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px dashed #e2e8f0;">
+                    <div>
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Registration Mode</span>
+                        <div class="mode-toggle" style="display: flex; background: #f1f5f9; padding: 4px; border-radius: 8px; gap: 4px;">
+                            <button type="button" id="modeAuto" class="btn btn-mode active" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">Automatic</button>
+                            <button type="button" id="modeManual" class="btn btn-mode" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">Manual</button>
+                        </div>
+                    </div>
                     <button type="button" id="btnConnectBridge" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; gap: 0.4rem;">
                         <i class="ph ph-broadcast"></i> <span>Connect Bridge</span>
                     </button>
                 </div>
 
-                <div class="form-field">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">RFID Tag ID</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" name="rfidTagId" id="rfidTagId" placeholder="Waiting for scan..." readonly required style="flex-grow: 1; background: #f1f5f9; cursor: not-allowed;">
-                        <button type="button" id="scanBtn" class="btn btn-primary" style="padding: 0 1.5rem;">
-                            <i class="ph ph-scan"></i> <span id="scanBtnText">Scan Tag</span>
-                        </button>
+                <!-- Automatic Mode View -->
+                <div id="autoModeContainer">
+                    <div class="form-field">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">RFID Tag ID (Double Scan to Verify)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <div style="flex-grow: 1; position: relative;">
+                                <input type="text" name="rfidTagId" id="rfidTagId" placeholder="Waiting for scan..." readonly required 
+                                    style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #f1f5f9; cursor: not-allowed;">
+                                <div id="scanVerificationBadge" class="hidden" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px;"></div>
+                            </div>
+                            <button type="button" id="scanBtn" class="btn btn-primary" style="padding: 0 1.5rem;">
+                                <i class="ph ph-scan"></i> <span id="scanBtnText">Scan Tag</span>
+                            </button>
+                            <button type="button" id="resetScanBtn" class="btn btn-outline hidden" style="padding: 0 1rem;" title="Reset Scan">
+                                <i class="ph ph-arrows-clockwise"></i>
+                            </button>
+                        </div>
+                        <div id="scannerStatusBox" class="mt-3 p-2 rounded bg-gray-50 flex items-center gap-2 border border-gray-100">
+                            <span id="statusIcon"><i class="ph ph-circle text-gray-400"></i></span> 
+                            <span id="statusText" class="text-xs text-gray-600">Hardware scanner ready for assignment.</span>
+                        </div>
                     </div>
-                    <div id="scannerStatusBox" class="mt-3 p-2 rounded bg-gray-50 flex items-center gap-2 border border-gray-100">
-                        <span id="statusIcon"><i class="ph ph-circle text-gray-400"></i></span> 
-                        <span id="statusText" class="text-xs text-gray-600">Hardware scanner ready for assignment.</span>
+                </div>
+
+                <!-- Manual Mode View -->
+                <div id="manualModeContainer" class="hidden">
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">RFID Tag ID</label>
+                            <input type="text" id="manualRfidTagId" placeholder="Enter Tag ID manually" 
+                                style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        </div>
+                        <div class="form-field">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Tag ID</label>
+                            <input type="text" id="confirmRfidTagId" placeholder="Re-enter Tag ID to verify" 
+                                style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        </div>
+                    </div>
+                    <div id="manualStatusBox" class="mt-3 p-2 rounded bg-gray-50 flex items-center gap-2 border border-gray-100">
+                        <i class="ph ph-info text-blue-400"></i>
+                        <span class="text-xs text-gray-600">Please ensure both entries match to prevent registration errors.</span>
                     </div>
                 </div>
             </div>
@@ -454,6 +490,20 @@
         line-height: 1;
         margin-left: 0.25rem;
     }
+    .btn-mode {
+        background: transparent;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+    .btn-mode.active {
+        background: white;
+        color: var(--bg-sidebar);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
 </style>
 
 @section('scripts')
@@ -563,16 +613,98 @@
             });
         });
 
-        // Tag Scanner Logic (Bridge & Simulation)
+        // Tag Scanner Logic (Bridge, Verification & Manual Entry)
         const scanBtn = document.getElementById('scanBtn');
         const scanBtnText = document.getElementById('scanBtnText');
+        const resetScanBtn = document.getElementById('resetScanBtn');
         const rfidInput = document.getElementById('rfidTagId');
+        const scanBadge = document.getElementById('scanVerificationBadge');
         const statusText = document.getElementById('statusText');
         const statusIcon = document.getElementById('statusIcon');
         const btnConnectBridge = document.getElementById('btnConnectBridge');
-        const submitButton = document.querySelector('#registerForm button[type="submit"]');
+        
+        const modeAuto = document.getElementById('modeAuto');
+        const modeManual = document.getElementById('modeManual');
+        const autoContainer = document.getElementById('autoModeContainer');
+        const manualContainer = document.getElementById('manualModeContainer');
+        const manualTagInput = document.getElementById('manualRfidTagId');
+        const confirmTagInput = document.getElementById('confirmRfidTagId');
+
+        let registrationMode = 'auto';
+        let scanStep = 0; // 0: none, 1: first scan captured, 2: verified
+        let firstScanId = '';
+
+        // Mode Switching
+        modeAuto.addEventListener('click', () => {
+            registrationMode = 'auto';
+            modeAuto.classList.add('active');
+            modeManual.classList.remove('active');
+            autoContainer.classList.remove('hidden');
+            manualContainer.classList.add('hidden');
+            resetScanner();
+        });
+
+        modeManual.addEventListener('click', () => {
+            registrationMode = 'manual';
+            modeManual.classList.add('active');
+            modeAuto.classList.remove('active');
+            manualContainer.classList.remove('hidden');
+            autoContainer.classList.add('hidden');
+            resetScanner();
+        });
+
+        function resetScanner() {
+            scanStep = 0;
+            firstScanId = '';
+            rfidInput.value = '';
+            rfidInput.style.background = '#f1f5f9';
+            rfidInput.style.borderColor = '#e2e8f0';
+            scanBadge.classList.add('hidden');
+            resetScanBtn.classList.add('hidden');
+            
+            manualTagInput.value = '';
+            confirmTagInput.value = '';
+            
+            if (registrationMode === 'auto') {
+                updateStatus('Hardware scanner ready for assignment.', 'info');
+                scanBtnText.innerText = isBridgeMode ? 'Listening...' : 'Scan Tag';
+            } else {
+                updateStatus('Manual entry mode active.', 'info');
+            }
+        }
+
+        resetScanBtn.addEventListener('click', resetScanner);
+
+        // Manual Input Validation
+        const validateManualTags = () => {
+            if (registrationMode !== 'manual') return;
+            
+            const tag1 = manualTagInput.value.trim();
+            const tag2 = confirmTagInput.value.trim();
+            
+            if (tag1 && tag2) {
+                if (tag1 === tag2) {
+                    rfidInput.value = tag1;
+                    updateStatus('Manual Tag Verified!', 'success');
+                    manualTagInput.style.borderColor = '#10b981';
+                    confirmTagInput.style.borderColor = '#10b981';
+                } else {
+                    rfidInput.value = '';
+                    updateStatus('Tags do not match. Please check your entry.', 'danger');
+                    manualTagInput.style.borderColor = '#ef4444';
+                    confirmTagInput.style.borderColor = '#ef4444';
+                }
+            } else {
+                rfidInput.value = '';
+                manualTagInput.style.borderColor = '#e2e8f0';
+                confirmTagInput.style.borderColor = '#e2e8f0';
+            }
+        };
+
+        manualTagInput.addEventListener('input', validateManualTags);
+        confirmTagInput.addEventListener('input', validateManualTags);
+
         const toast = document.getElementById('registrationSuccessToast');
-        const toastMsg = document.getElementById('registrationSuccessMessage');
         const toastCloseBtn = document.getElementById('toastCloseBtn');
 
         const Toast = Swal.mixin({
@@ -604,16 +736,13 @@
             statusText.innerText = text;
             if (type === 'success') {
                 statusIcon.innerHTML = '<i class="ph ph-check-circle text-success" style="color: #10b981"></i>';
-                statusText.classList.add('text-success');
-                statusText.classList.remove('text-warning', 'text-danger');
+                statusText.className = 'text-xs text-success font-semibold';
             } else if (type === 'warning') {
                 statusIcon.innerHTML = '<i class="ph ph-broadcast text-warning" style="color: #f59e0b"></i>';
-                statusText.classList.add('text-warning');
-                statusText.classList.remove('text-success', 'text-danger');
+                statusText.className = 'text-xs text-warning font-semibold';
             } else if (type === 'danger') {
                 statusIcon.innerHTML = '<i class="ph ph-warning-circle text-danger" style="color: #ef4444"></i>';
-                statusText.classList.add('text-danger');
-                statusText.classList.remove('text-success', 'text-warning');
+                statusText.className = 'text-xs text-danger font-semibold';
             } else {
                 statusIcon.innerHTML = '<i class="ph ph-circle text-gray-400"></i>';
                 statusText.className = 'text-xs text-gray-600';
@@ -634,46 +763,99 @@
                 isBridgeMode = true;
                 btnConnectBridge.innerHTML = '<i class="ph ph-plugs-connected"></i> Connected';
                 btnConnectBridge.classList.replace('btn-outline', 'btn-primary');
-                updateStatus('Hardware Bridge Connected. Ready for live scanning.', 'success');
-                scanBtnText.innerText = 'Listening...';
-                scanBtn.disabled = true;
+                updateStatus('Hardware Bridge Connected.', 'success');
+                if (registrationMode === 'auto') {
+                    scanBtnText.innerText = 'Listening...';
+                    scanBtn.disabled = true;
+                }
             };
 
             bridgeSocket.onmessage = async function(event) {
+                if (registrationMode !== 'auto') return;
+                
                 try {
                     const data = JSON.parse(event.data);
                     if (data.tagId) {
-                        // Check if tag is already registered
-                        const checkResponse = await fetch(`{{ url('office/check-tag') }}?tagId=${data.tagId}`);
-                        const checkResult = await checkResponse.json();
+                        const scannedId = data.tagId;
 
-                        if (checkResult.exists) {
-                            rfidInput.value = '';
-                            rfidInput.style.background = '#fef2f2';
-                            rfidInput.style.borderColor = '#ef4444';
-                            updateStatus('Registration Conflict: Tag already in use.', 'danger');
+                        if (scanStep === 0) {
+                            // First Scan
+                            firstScanId = scannedId;
+                            scanStep = 1;
                             
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Tag Already Registered',
-                                text: checkResult.message,
-                                footer: '<b>Owner:</b> ' + checkResult.owner,
-                                confirmButtonColor: '#ef4444'
-                            });
-                        } else {
-                            rfidInput.value = data.tagId;
-                            rfidInput.style.background = '#ecfdf5';
-                            rfidInput.style.borderColor = '#10b981';
-                            updateStatus('Tag successfully captured from hardware: ' + data.tagId, 'success');
+                            rfidInput.value = ''; // Don't fill yet
+                            rfidInput.placeholder = "FIRST SCAN CAPTURED...";
+                            rfidInput.style.background = '#fffbeb';
+                            rfidInput.style.borderColor = '#fbbf24';
+                            
+                            scanBadge.classList.remove('hidden');
+                            scanBadge.innerText = "STEP 1/2";
+                            scanBadge.style.background = '#fbbf24';
+                            scanBadge.style.color = '#78350f';
+                            
+                            resetScanBtn.classList.remove('hidden');
+                            updateStatus('First scan successful. Please scan the same tag AGAIN to verify.', 'warning');
                             
                             Swal.fire({
                                 toast: true,
                                 position: 'top-end',
-                                icon: 'success',
-                                title: 'Tag ID Captured',
+                                icon: 'info',
+                                title: 'Step 1 Captured',
+                                text: 'Scan again to verify',
                                 showConfirmButton: false,
-                                timer: 1500
+                                timer: 2000
                             });
+                        } else if (scanStep === 1) {
+                            // Verification Scan
+                            if (scannedId === firstScanId) {
+                                // MATCH!
+                                // Final step: Check if already registered
+                                const checkResponse = await fetch(`{{ url('office/check-tag') }}?tagId=${scannedId}`);
+                                const checkResult = await checkResponse.json();
+
+                                if (checkResult.exists) {
+                                    updateStatus('Verification Conflict: Tag already in use.', 'danger');
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Tag Already Registered',
+                                        text: checkResult.message,
+                                        footer: '<b>Owner:</b> ' + checkResult.owner,
+                                        confirmButtonColor: '#ef4444'
+                                    });
+                                    resetScanner();
+                                } else {
+                                    rfidInput.value = scannedId;
+                                    rfidInput.style.background = '#ecfdf5';
+                                    rfidInput.style.borderColor = '#10b981';
+                                    
+                                    scanBadge.innerText = "VERIFIED";
+                                    scanBadge.style.background = '#10b981';
+                                    scanBadge.style.color = 'white';
+                                    
+                                    scanStep = 2;
+                                    updateStatus('Tag Double-Verified and Ready.', 'success');
+                                    
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Double Verification Successful',
+                                        text: 'Tag ID ' + scannedId + ' has been verified.',
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    });
+                                }
+                            } else {
+                                // MISMATCH
+                                updateStatus('MISMATCH! Verification failed. Try again.', 'danger');
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Verification Failed',
+                                    text: 'The second scan did not match the first. Please scan the tag again carefully.',
+                                    confirmButtonColor: '#ef4444'
+                                });
+                                // Keep Step 1 but maybe they want to reset? Let's just let them try again for Step 2 or reset.
+                                // Actually, it's safer to reset to step 0.
+                                resetScanner();
+                            }
                         }
                     }
                 } catch (e) {
@@ -691,55 +873,45 @@
             };
 
             bridgeSocket.onerror = function() {
-                updateStatus('Failed to connect to local bridge. Ensure bridge service is running on Port 8080.', 'danger');
+                updateStatus('Bridge connection failed.', 'danger');
                 btnConnectBridge.innerHTML = '<i class="ph ph-broadcast"></i> Connect Bridge';
             };
         });
 
         scanBtn.addEventListener('click', function() {
-            // If already in bridge mode, just show guidance
-            if (isBridgeMode) {
-                updateStatus('Hardware is active. Wave the RFID tag over the scanner now...', 'warning');
-                rfidInput.placeholder = "Listening for hardware scan...";
-                return;
-            }
-
-            // Attempt to connect to the hardware bridge automatically
-            updateStatus('Connecting to hardware reader...', 'warning');
-            
-            // Re-use bridge connection logic
-            console.log('Attempting to connect to bridge...');
+            if (isBridgeMode) return;
             btnConnectBridge.click();
-            
-            // Wait to see if connection succeeds (Increased timeout to 2500ms)
-            setTimeout(() => {
-                if (isBridgeMode || (bridgeSocket && bridgeSocket.readyState === WebSocket.OPEN)) {
-                    updateStatus('Communication established! Wave your tag over the reader.', 'success');
-                    rfidInput.placeholder = "Reading hardware UID...";
-                } else {
-                    console.error('Bridge connection timed out or failed. ReadyState:', bridgeSocket ? bridgeSocket.readyState : 'null');
-                    updateStatus('Hardware connection failed. Ensure Bridge Service is running on Port 8080.', 'danger');
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Connection Failed',
-                        html: 'Could not connect to the Bridge Service.<br><br>' +
-                              '<div style="text-align: left; font-size: 0.9rem;">' +
-                              '1. Ensure <b>bridge_service.py</b> is running.<br>' +
-                              '2. Check if the terminal shows "Attempting to listen on...".<br>' +
-                              '3. Try clicking "Connect Bridge" manually.</div>',
-                        confirmButtonColor: '#1e293b'
-                    });
-                }
-            }, 2500);
         });
 
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // Comprehensive Tag Validation
+            if (registrationMode === 'auto' && scanStep < 2) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Verification Required',
+                    text: 'Please complete the double-scan verification before submitting.',
+                    confirmButtonColor: '#1e293b'
+                });
+                return;
+            }
+            
+            if (registrationMode === 'manual' && (!rfidInput.value || manualTagInput.value !== confirmTagInput.value)) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Manual Entry Incomplete',
+                    text: 'Please ensure the Tag IDs match and are correctly entered.',
+                    confirmButtonColor: '#1e293b'
+                });
+                return;
+            }
+
             if (!rfidInput.value) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Missing Tag ID',
-                    text: 'Please scan an RFID tag before submitting.',
+                    text: 'Please assign an RFID tag before submitting.',
                     confirmButtonColor: '#1e293b'
                 });
                 return;
@@ -752,6 +924,7 @@
             const submitUrl = isEdit
                 ? `{{ url('office/registration') }}/${registrationData?.id}`
                 : `{{ route('office.registration.store') }}`;
+            
             if (isEdit) {
                 formData.append('_method', 'PUT');
             }
@@ -790,11 +963,10 @@
                         confirmButtonColor: '#10b981'
                     });
 
-                    this.reset();
-                    rfidInput.value = '';
-                    rfidInput.style.background = '#f1f5f9';
-                    rfidInput.style.borderColor = '';
-                    updateStatus('Registration saved successfully!', 'success');
+                    if (!isEdit) {
+                        this.reset();
+                        resetScanner();
+                    }
                     showToast(successMsg);
                 } else {
                     Swal.fire({
@@ -815,6 +987,7 @@
                 });
             });
         });
+
 
         // Prefill when editing
         function prefillForm() {

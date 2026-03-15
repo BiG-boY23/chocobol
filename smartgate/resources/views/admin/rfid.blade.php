@@ -31,6 +31,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3>Master Tag Directory</h3>
             <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="showRegistrationModal()"><i class="ph ph-plus"></i> Register New Tag</button>
                 <button class="btn btn-outline" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise"></i> Refresh</button>
                 <a href="{{ route('admin.reports') }}" class="btn btn-outline"><i class="ph ph-file-text"></i> View Audit Logs</a>
             </div>
@@ -200,8 +201,8 @@
                             <div>
                                 <h4 style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 0.5rem;">Applicant</h4>
                                 <div style="font-weight: 600;">${reg.full_name}</div>
-                                <div style="font-size: 0.8rem;">${reg.role.toUpperCase()}</div>
-                                <div style="font-size: 0.8rem;">${reg.contact_number}</div>
+                                <div style="font-size: 0.8rem;">${reg.role ? reg.role.toUpperCase() : 'N/A'}</div>
+                                <div style="font-size: 0.8rem;">${reg.contact_number || 'N/A'}</div>
                             </div>
                             <div>
                                 <h4 style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 0.5rem;">Vehicle</h4>
@@ -222,6 +223,306 @@
             Swal.fire('Error', 'Could not load tag details.', 'error');
         }
     }
+
+    let bridgeSocket = null;
+    let isBridgeMode = false;
+    let registrationMode = 'auto'; // 'auto' or 'manual'
+    let scanStep = 0; // 0: none, 1: first scan, 2: verified
+    let firstScanId = '';
+
+    function updateScannerStatus(text, type = 'info') {
+        const textEl = document.getElementById('modalStatusText');
+        const iconEl = document.getElementById('modalStatusIcon');
+        if (!textEl || !iconEl) return;
+
+        textEl.innerText = text;
+        if (type === 'success') {
+            iconEl.innerHTML = '<i class="ph ph-check-circle" style="color: #10b981"></i>';
+            textEl.style.color = '#10b981';
+        } else if (type === 'warning') {
+            iconEl.innerHTML = '<i class="ph ph-broadcast" style="color: #f59e0b"></i>';
+            textEl.style.color = '#f59e0b';
+        } else if (type === 'danger') {
+            iconEl.innerHTML = '<i class="ph ph-warning-circle" style="color: #ef4444"></i>';
+            textEl.style.color = '#ef4444';
+        } else {
+            iconEl.innerHTML = '<i class="ph ph-circle" style="color: #94a3b8"></i>';
+            textEl.style.color = '#64748b';
+        }
+    }
+
+    function resetModalScanner() {
+        scanStep = 0;
+        firstScanId = '';
+        const rfidInput = document.getElementById('modalRfidInput');
+        const badge = document.getElementById('modalScanBadge');
+        if (rfidInput) {
+            rfidInput.value = '';
+            rfidInput.style.background = '#f1f5f9';
+            rfidInput.placeholder = "Waiting for scan...";
+        }
+        if (badge) badge.classList.add('hidden');
+        updateScannerStatus('Hardware scanner ready for assignment.', 'info');
+    }
+
+    function showRegistrationModal() {
+        Swal.fire({
+            title: 'Quick Tag Registration',
+            width: '600px',
+            html: `
+                <div style="text-align: left; font-size: 0.9rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 1rem;">
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:4px; color:#475569;">Owner Full Name</label>
+                            <input id="regName" class="swal2-input" style="width:100%; margin:0; height:38px; font-size:0.9rem;" placeholder="e.g. Juan Dela Cruz">
+                        </div>
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:4px; color:#475569;">System Role</label>
+                            <select id="regRole" class="swal2-select" style="width:100%; margin:0; height:38px; font-size:0.9rem;">
+                                <option value="student">Student</option>
+                                <option value="faculty">Faculty</option>
+                                <option value="staff">Non-Teaching</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 1rem;">
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:4px; color:#475569;">Vehicle Type</label>
+                            <select id="regType" class="swal2-select" style="width:100%; margin:0; height:38px; font-size:0.9rem;">
+                                <option value="car">Car</option>
+                                <option value="suv">SUV</option>
+                                <option value="van">Van</option>
+                                <option value="motorcycle">Motorcycle</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:4px; color:#475569;">Plate Number</label>
+                            <input id="regPlate" class="swal2-input" style="width:100%; margin:0; height:38px; font-size:0.9rem;" placeholder="ABC 1234">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 1.5rem;">
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:4px; color:#475569;">Make / Brand</label>
+                            <input id="regBrand" class="swal2-input" style="width:100%; margin:0; height:38px; font-size:0.9rem;" placeholder="e.g. Toyota">
+                        </div>
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:4px; color:#475569;">Contact Number</label>
+                            <input id="regContact" class="swal2-input" style="width:100%; margin:0; height:38px; font-size:0.9rem;" placeholder="09XXXXXXXXX">
+                        </div>
+                    </div>
+
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:1rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                            <div style="display:flex; background:#f1f5f9; padding:3px; border-radius:6px; gap:2px;">
+                                <button id="btnModeAuto" class="btn-mode active" style="padding:0.3rem 0.6rem; font-size:0.7rem;">Automatic</button>
+                                <button id="btnModeManual" class="btn-mode" style="padding:0.3rem 0.6rem; font-size:0.7rem;">Manual</button>
+                            </div>
+                            <button id="btnModalConnect" class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.7rem; gap:4px;">
+                                <i class="ph ph-broadcast"></i> Connect
+                            </button>
+                        </div>
+
+                        <div id="modalAutoBox">
+                           <label style="display:block; font-weight:700; font-size:0.75rem; text-transform:uppercase; color:#64748b; margin-bottom:8px;">RFID Tag ID (Requirement: Double Scan)</label>
+                           <div style="display:flex; gap:10px; align-items:center;">
+                                <div style="flex-grow:1; position:relative;">
+                                    <input id="modalRfidInput" readonly style="width:100%; padding:10px; border-radius:6px; border:1px solid #e2e8f0; background:#f1f5f9; font-family:monospace; font-weight:600;" placeholder="Waiting for scan...">
+                                    <span id="modalScanBadge" class="hidden" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:0.65rem; font-weight:800; padding:2px 6px; border-radius:4px; background:#fbbf24; color:#78350f;">STEP 1</span>
+                                </div>
+                                <button id="btnModalReset" class="btn btn-outline" style="height:40px; width:40px; padding:0; display:flex; align-items:center; justify-content:center;" title="Reset Scan"><i class="ph ph-arrows-clockwise"></i></button>
+                           </div>
+                           <div id="modalStatusBox" style="margin-top:10px; display:flex; align-items:center; gap:6px; font-size:0.75rem;">
+                                <span id="modalStatusIcon"><i class="ph ph-circle"></i></span>
+                                <span id="modalStatusText" style="color:#64748b;">Bridge disconnected.</span>
+                           </div>
+                        </div>
+
+                        <div id="modalManualBox" class="hidden">
+                           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                                <div>
+                                    <label style="display:block; font-weight:600; margin-bottom:4px; color:#475569; font-size:0.75rem;">Enter Tag ID</label>
+                                    <input id="manual1" style="width:100%; padding:8px; border-radius:6px; border:1px solid #e2e8f0; font-family:monospace;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-weight:600; margin-bottom:4px; color:#475569; font-size:0.75rem;">Confirm Tag ID</label>
+                                    <input id="manual2" style="width:100%; padding:8px; border-radius:6px; border:1px solid #e2e8f0; font-family:monospace;">
+                                </div>
+                           </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Register Tag',
+            confirmButtonColor: '#1e293b',
+            didOpen: () => {
+                const autoBtn = document.getElementById('btnModeAuto');
+                const manualBtn = document.getElementById('btnModeManual');
+                const autoBox = document.getElementById('modalAutoBox');
+                const manualBox = document.getElementById('modalManualBox');
+                const connectBtn = document.getElementById('btnModalConnect');
+                const rfidOut = document.getElementById('modalRfidInput');
+                const man1 = document.getElementById('manual1');
+                const man2 = document.getElementById('manual2');
+
+                autoBtn.onclick = () => {
+                    registrationMode = 'auto';
+                    autoBtn.classList.add('active');
+                    manualBtn.classList.remove('active');
+                    autoBox.classList.remove('hidden');
+                    manualBox.classList.add('hidden');
+                    resetModalScanner();
+                };
+
+                manualBtn.onclick = () => {
+                    registrationMode = 'manual';
+                    manualBtn.classList.add('active');
+                    autoBtn.classList.remove('active');
+                    manualBox.classList.remove('hidden');
+                    autoBox.classList.add('hidden');
+                    resetModalScanner();
+                };
+
+                document.getElementById('btnModalReset').onclick = resetModalScanner;
+
+                function validateManual() {
+                    const t1 = man1.value.trim();
+                    const t2 = man2.value.trim();
+                    if (t1 && t2 && t1 === t2) {
+                        rfidOut.value = t1;
+                        man1.style.borderColor = '#10b981';
+                        man2.style.borderColor = '#10b981';
+                    } else {
+                        rfidOut.value = '';
+                        if (t1 && t2) {
+                            man1.style.borderColor = '#ef4444';
+                            man2.style.borderColor = '#ef4444';
+                        }
+                    }
+                }
+                man1.oninput = validateManual;
+                man2.oninput = validateManual;
+
+                if (isBridgeMode) {
+                    connectBtn.innerHTML = '<i class="ph ph-plugs-connected"></i> Connected';
+                    updateScannerStatus('Hardware scanner active.', 'success');
+                }
+
+                connectBtn.onclick = () => {
+                   if (bridgeSocket && bridgeSocket.readyState === WebSocket.OPEN) {
+                       bridgeSocket.close();
+                       return;
+                   }
+                   connectBtn.innerHTML = '...';
+                   bridgeSocket = new WebSocket('ws://127.0.0.1:8080');
+                   bridgeSocket.onopen = () => {
+                       isBridgeMode = true;
+                       connectBtn.innerHTML = '<i class="ph ph-plugs-connected"></i> Connected';
+                       updateScannerStatus('Connection established.', 'success');
+                   };
+                   bridgeSocket.onmessage = async (e) => {
+                       if (registrationMode !== 'auto') return;
+                       const data = JSON.parse(e.data);
+                       if (data.tagId) {
+                           const sid = data.tagId;
+                           const badge = document.getElementById('modalScanBadge');
+                           if (scanStep === 0) {
+                               firstScanId = sid;
+                               scanStep = 1;
+                               rfidOut.placeholder = "VERIFYING...";
+                               badge.classList.remove('hidden');
+                               badge.innerText = "STEP 1";
+                               updateScannerStatus('First scan captured. Scan again.', 'warning');
+                           } else if (scanStep === 1) {
+                               if (sid === firstScanId) {
+                                   // Verify if tag is already taken
+                                   const checkRes = await fetch(`{{ url('admin/check-tag') }}?tagId=${sid}`);
+                                   const checkData = await checkRes.json();
+                                   
+                                   if (checkData.exists) {
+                                       updateScannerStatus('Conflict: Tag already in use!', 'danger');
+                                       Swal.fire({
+                                           icon: 'error',
+                                           title: 'Tag already registered',
+                                           text: checkData.message,
+                                           confirmButtonColor: '#ef4444'
+                                       });
+                                       resetModalScanner();
+                                       return;
+                                   }
+
+                                   rfidOut.value = sid;
+                                   scanStep = 2;
+                                   badge.innerText = "VERIFIED";
+                                   badge.style.background = '#10b981';
+                                   badge.style.color = 'white';
+                                   updateScannerStatus('Tag verified and ready.', 'success');
+                               } else {
+                                   updateScannerStatus('Mismatch! Restarting.', 'danger');
+                                   resetModalScanner();
+                               }
+                           }
+                       }
+                   };
+                   bridgeSocket.onclose = () => {
+                       isBridgeMode = false;
+                       connectBtn.innerHTML = '<i class="ph ph-broadcast"></i> Connect';
+                       updateScannerStatus('Bridge closed.', 'info');
+                   };
+                };
+            },
+            preConfirm: async () => {
+                const name = document.getElementById('regName').value;
+                const role = document.getElementById('regRole').value;
+                const type = document.getElementById('regType').value;
+                const plate = document.getElementById('regPlate').value;
+                const brand = document.getElementById('regBrand').value;
+                const contact = document.getElementById('regContact').value;
+                const tag = document.getElementById('modalRfidInput').value;
+
+                if (!name || !plate || !brand || !contact) {
+                    Swal.showValidationMessage('Please fill all owner/vehicle fields.');
+                    return false;
+                }
+
+                if (!tag) {
+                    Swal.showValidationMessage('RFID verification incomplete.');
+                    return false;
+                }
+
+                try {
+                    const response = await fetch('{{ route("admin.rfid.store") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            fullName: name,
+                            role: role,
+                            vehicleType: type,
+                            plateNumber: plate,
+                            makeBrand: brand,
+                            contactNumber: contact,
+                            rfidTagId: tag
+                        })
+                    });
+                    const data = await response.json();
+                    if (!data.success) {
+                        Swal.showValidationMessage(data.message || 'Registration failed.');
+                        return false;
+                    }
+                    return data;
+                } catch (e) {
+                    Swal.showValidationMessage('Connection error.');
+                }
+            }
+        }).then(res => {
+            if (res.isConfirmed) {
+                Swal.fire('Success', 'Vehicle & Tag registered.', 'success').then(() => window.location.reload());
+            }
+        });
+    }
 </script>
 
 <style>
@@ -235,6 +536,23 @@
     .btn-success:hover { opacity: 0.9; }
     .btn-danger { background: #ef4444; color: white; border: none; border-radius: 8px; transition: opacity 0.2s; }
     .btn-danger:hover { opacity: 0.9; }
+    
+    /* Mode Toggle for Modal */
+    .btn-mode {
+        background: transparent;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-radius: 6px;
+        font-weight: 600;
+        outline: none;
+    }
+    .btn-mode.active {
+        background: white;
+        color: #1e293b;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
 </style>
 
 @endsection
