@@ -40,7 +40,7 @@ class VehicleRegistration extends Model
         'office_user_id',
         'cr_path',
         'or_path',
-        'com_path',
+        'cor_path',
         'student_id_path',
         'license_path',
         'employee_id_path',

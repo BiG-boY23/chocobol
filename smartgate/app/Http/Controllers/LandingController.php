@@ -81,7 +81,7 @@ class LandingController extends Controller
             $rules['college_dept'] = 'required|string|max:100';
             $rules['year_level'] = 'required|string|max:10';
             $rules['access_classification'] = 'required|string';
-            $rules['com_file'] = 'required|image|max:5120';
+            $rules['cor_file'] = 'required|image|max:5120';
             $rules['student_id_file'] = 'required|image|max:5120';
         } elseif ($request->role === 'faculty') {
             $rules['faculty_id'] = 'required|string|max:50';
@@ -103,7 +103,7 @@ class LandingController extends Controller
             'cr_file' => 'cr_path',
             'or_file' => 'or_path',
             'license_file' => 'license_path',
-            'com_file' => 'com_path',
+            'cor_file' => 'cor_path',
             'student_id_file' => 'student_id_path',
             'employee_id_file' => 'employee_id_path',
             'payment_receipt_file' => 'payment_receipt_path',

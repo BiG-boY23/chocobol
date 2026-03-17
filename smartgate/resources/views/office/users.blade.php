@@ -71,7 +71,7 @@
                     data-cr="{{ $reg->cr_path ? asset('storage/' . $reg->cr_path) : '' }}"
                     data-or="{{ $reg->or_path ? asset('storage/' . $reg->or_path) : '' }}"
                     data-license="{{ $reg->license_path ? asset('storage/' . $reg->license_path) : '' }}"
-                    data-com="{{ $reg->com_path ? asset('storage/' . $reg->com_path) : '' }}"
+                    data-cor="{{ $reg->cor_path ? asset('storage/' . $reg->cor_path) : '' }}"
                     data-sid="{{ $reg->student_id_path ? asset('storage/' . $reg->student_id_path) : '' }}"
                     data-eid="{{ $reg->employee_id_path ? asset('storage/' . $reg->employee_id_path) : '' }}"
                 >
@@ -399,11 +399,11 @@
                     document.getElementById('v-or').src = row.dataset.or;
                     document.getElementById('v-license').src = row.dataset.license;
                     
-                    const extra = row.dataset.com || row.dataset.eid || row.dataset.sid;
+                    const extra = row.dataset.cor || row.dataset.eid || row.dataset.sid;
                     if (extra) {
                         document.getElementById('v-extra-sect').style.display = 'block';
                         document.getElementById('v-extra').src = extra;
-                        document.getElementById('v-extra-label').textContent = row.dataset.role === 'student' ? 'COM / Student ID' : 'Employee ID';
+                        document.getElementById('v-extra-label').textContent = row.dataset.role === 'student' ? 'COR / Student ID' : 'Employee ID';
                     } else {
                         document.getElementById('v-extra-sect').style.display = 'none';
                     }

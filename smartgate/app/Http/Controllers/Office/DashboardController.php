@@ -361,10 +361,10 @@ class DashboardController extends Controller
             'cr_file' => 'cr_path',
             'or_file' => 'or_path',
             'license_file' => 'license_path',
-            'com_file' => 'com_path',
+            'cor_file' => 'cor_path',
             'student_id_file' => 'student_id_path',
             'employee_id_file' => 'employee_id_path',
-            'extra' => ['com_path', 'employee_id_path', 'student_id_path']
+            'extra' => ['cor_path', 'employee_id_path', 'student_id_path']
         ];
 
         $path = null;

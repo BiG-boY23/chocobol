@@ -4,559 +4,801 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Online Registration | SmartGate</title>
+    <title>Vehicle Access Registration | SmartGate</title>
+    
+    <!-- Premium Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
     <style>
         :root {
             --primary: #741b1b;
-            --primary-light: #8b2d2d;
-            --secondary: #fdb913;
-            --bg-light: #fdfdfc;
-            --text-dark: #1b1b18;
-            --text-muted: #706f6c;
-            --radius: 12px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --primary-dark: #4d0a0a;
+            --primary-glass: rgba(116, 27, 27, 0.08);
+            --accent: #fdb913;
+            --accent-dark: #b45309;
+            --bg-body: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --white: #ffffff;
+            --radius-xl: 32px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --shadow-premium: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
+            --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-light);
-            color: var(--text-dark);
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(116, 27, 27, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(253, 185, 19, 0.05) 0px, transparent 50%);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding-left: 0 !important;
+        }
+
+        /* Hero Background with Geometry */
+        .page-header-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; height: 450px;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            z-index: -1;
+            clip-path: polygon(0 0, 100% 0, 100% 75%, 0 100%);
+            overflow: hidden;
+        }
+
+        .page-header-bg::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2v-4h4v-2h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2v-4h4v-2H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
         }
 
         .container {
-            max-width: 800px;
-            margin: 4rem auto;
-            padding: 0 2rem;
-            width: 100%;
+            max-width: 950px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            position: relative;
         }
 
-        .registration-card {
-            background: white;
-            padding: 3rem;
-            border-radius: 24px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
-            border: 1px solid #f1f1f0;
+        /* Navigation */
+        .nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0 2.5rem;
+            color: white;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 3rem;
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon {
+            width: 48px; height: 48px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem;
         }
-
-        .header h1 {
-            font-size: 2.5rem;
+        .logo-text {
+            font-family: 'Outfit', sans-serif;
             font-weight: 800;
-            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .exit-btn {
+            text-decoration: none;
+            color: white;
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding: 0.7rem 1.4rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .exit-btn:hover { background: rgba(0, 0, 0, 0.3); transform: translateX(-4px); }
+
+        /* Progress Stepper */
+        .stepper {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            position: relative;
+            padding: 0 1rem;
+        }
+
+        .stepper::before {
+            content: '';
+            position: absolute;
+            top: 20px; left: 10%; right: 10%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            z-index: 0;
+        }
+
+        .step {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            width: 80px;
+        }
+
+        .step-circle {
+            width: 42px; height: 42px;
+            background: #4d0a0a;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 700;
+            transition: var(--transition);
+        }
+
+        .step-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+        }
+
+        .step.active .step-circle {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--primary-dark);
+            box-shadow: 0 0 20px rgba(253, 185, 19, 0.3);
+            transform: scale(1.1);
+        }
+
+        .step.active .step-label { color: white; opacity: 1; }
+
+        .step.completed .step-circle {
+            background: white;
+            border-color: white;
+            color: var(--primary);
+        }
+
+        /* Glass Form Container */
+        .form-container {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-premium);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            overflow: hidden;
+            animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-header {
+            padding: 3rem 3rem 1.5rem;
+            text-align: center;
+        }
+
+        .form-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary-dark);
             letter-spacing: -1px;
         }
 
-        .header p {
+        .form-header p {
             color: var(--text-muted);
+            margin-top: 0.5rem;
+            font-weight: 500;
         }
 
-        .form-group {
-            margin-bottom: 1.5rem;
+        /* Slide Transition System */
+        .slides-wrapper {
+            position: relative;
+            padding: 0 3rem 3rem;
+            min-height: 400px;
         }
 
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
+        .form-slide {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
         }
+
+        .form-slide.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Input Controls */
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .full-width { grid-column: span 2; }
 
         label {
             display: block;
             font-weight: 700;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            color: var(--text-dark);
+            font-size: 0.85rem;
+            color: var(--text-main);
+            margin-bottom: 0.6rem;
+            padding-left: 4px;
         }
 
-        input, select, textarea {
+        input, select {
             width: 100%;
-            padding: 0.75rem 1rem;
-            border-radius: 10px;
-            border: 1px solid #e3e3e0;
-            font-family: inherit;
+            padding: 0.9rem 1.2rem;
+            background: white;
+            border: 2px solid #f1f5f9;
+            border-radius: var(--radius-md);
             font-size: 1rem;
+            font-weight: 600;
             transition: var(--transition);
+            outline: none;
         }
 
         input:focus, select:focus {
-            outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(116, 27, 27, 0.1);
+            box-shadow: 0 0 0 4px var(--primary-glass);
+            background: white;
         }
 
-        .btn-submit {
-            width: 100%;
-            background: var(--primary);
-            color: white;
-            padding: 1rem;
-            border: none;
-            border-radius: var(--radius);
-            font-size: 1.1rem;
-            font-weight: 700;
+        /* Navigation Buttons */
+        .form-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 3rem 3rem;
+            background: rgba(248, 250, 252, 0.5);
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .btn {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 0.9rem;
+            padding: 1rem 2rem;
+            border-radius: 14px;
             cursor: pointer;
             transition: var(--transition);
-            margin-top: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex; align-items: center; gap: 10px;
+            border: none;
         }
 
-        .btn-submit:hover {
-            background: var(--primary-light);
-            transform: translateY(-2px);
+        .btn-next {
+            background: var(--primary);
+            color: white;
+            margin-left: auto;
             box-shadow: 0 10px 20px rgba(116, 27, 27, 0.2);
         }
 
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            text-decoration: none;
+        .btn-next:hover { transform: translateY(-3px); filter: brightness(1.1); }
+
+        .btn-back {
+            background: white;
             color: var(--text-muted);
-            font-weight: 600;
-            margin-bottom: 2rem;
+            border: 2px solid #e2e8f0;
+        }
+        .btn-back:hover { background: #f8fafc; color: var(--text-main); }
+
+        /* File Upload */
+        .upload-card {
+            background: white;
+            border: 2px dashed #cbd5e1;
+            padding: 1.5rem;
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
             transition: var(--transition);
-        }
-
-        .back-link:hover {
-            color: var(--primary);
-        }
-
-        .dynamic-field-section {
-            margin-bottom: 2rem;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .section-divider {
-            margin: 2.5rem 0 1.5rem;
-            border-top: 1px solid #f1f1f0;
-            padding-top: 1.5rem;
-        }
-
-        .section-title {
-            margin-bottom: 1.5rem;
-            font-weight: 800;
-            font-size: 1.1rem;
-            color: var(--primary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .form-group.scanning {
             position: relative;
-            opacity: 0.7;
-            pointer-events: none;
         }
 
-        .form-group.scanning::after {
-            content: '🔍 Scanning Document...';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--primary);
-            color: white;
-            padding: 0.5rem 1rem;
+        .upload-card:hover { border-color: var(--primary); background: var(--primary-glass); }
+        .upload-card i { font-size: 2rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .upload-card.verified { border-color: #10b981; background: rgba(16, 185, 129, 0.05); }
+        .upload-card input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+        /* Summary View */
+        .summary-box {
+            background: #f8fafc;
             border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
+            padding: 2rem;
+            border: 1px solid #e2e8f0;
+        }
+        .summary-group { margin-bottom: 1.5rem; }
+        .summary-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; }
+        .summary-value { font-size: 1.1rem; font-weight: 700; color: var(--primary-dark); }
+
+        /* Privacy */
+        .privacy-box {
+            margin-top: 2rem;
+            background: #fff9eb;
+            border: 1px solid #fde68a;
+            padding: 1.2rem;
+            border-radius: 14px;
+            display: flex; gap: 12px;
+            align-items: flex-start;
+        }
+
+        .privacy-checkbox { width: 22px; height: 22px; margin-top: 3px; cursor: pointer; accent-color: var(--primary); }
+        .privacy-text { font-size: 0.85rem; font-weight: 600; color: #92400e; line-height: 1.4; }
+
+        /* Loader */
+        .loader-overlay {
+            position: absolute; inset: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: none; align-items: center; justify-content: center;
             z-index: 10;
-            animation: pulse 1.5s infinite;
         }
 
-        .validation-error {
-            color: #ef4444;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-top: 0.5rem;
-            display: none;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
-            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
-            100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
-        }
-
-        @media (max-width: 600px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-            .registration-card {
-                padding: 1.5rem;
-            }
+        @media (max-width: 768px) {
+            .input-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: auto; }
+            .slides-wrapper, .form-header, .form-footer { padding: 1.5rem; }
+            .stepper { display: none; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <a href="{{ route('landing') }}" class="back-link">
-            <i class="fas fa-arrow-left"></i>
-            Back to Home
-        </a>
-
-        <div class="registration-card">
-            <div class="header">
-                <h1>Online Registration</h1>
-                <p>Register your vehicle to apply for an RFID tag.</p>
+    <div class="page-header-bg"></div>
+    
+    <div class="container" id="registration-wizard">
+        <nav class="nav-header">
+            <div class="logo-area">
+                <div class="logo-icon"><i class="ph-bold ph-shield-check" style="color: white;"></i></div>
+                <div class="logo-text">SMARTGATE</div>
             </div>
+            <a href="{{ route('landing') }}" class="exit-btn">
+                <i class="ph-bold ph-sign-out"></i> EXIT
+            </a>
+        </nav>
 
-            @if ($errors->any())
-                <div style="background: #fee2e2; border-left: 4px solid #ef4444; color: #b91c1c; padding: 1rem; margin-bottom: 2rem; border-radius: 8px; font-size: 0.9rem;">
-                    <p style="font-weight: 700; margin-bottom: 0.5rem;">Please fix the following errors:</p>
-                    <ul style="margin-left: 1.5rem;">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+        <!-- Dynamic Stepper -->
+        <div class="stepper">
+            <div class="step active" id="step-1">
+                <div class="step-circle">1</div>
+                <span class="step-label">Basic Info</span>
+            </div>
+            <div class="step" id="step-2">
+                <div class="step-circle">2</div>
+                <span class="step-label">Vehicle</span>
+            </div>
+            <div class="step" id="step-3">
+                <div class="step-circle">3</div>
+                <span class="step-label">Uploads</span>
+            </div>
+            <div class="step" id="step-4">
+                <div class="step-circle">4</div>
+                <span class="step-label">Review</span>
+            </div>
+        </div>
 
-            <form action="{{ route('online-registration.submit') }}" method="POST" enctype="multipart/form-data" id="registration-form">
-                @csrf
-                
-                <div class="form-group">
-                    <label>Registration Role</label>
-                    <select name="role" id="role-selector" required>
-                        <option value="" disabled selected>None</option>
-                        <option value="student">Student</option>
-                        <option value="faculty">Staff / EVSU Personnel (Teaching)</option>
-                        <option value="staff">Non-Teaching / Vendor</option>
-                    </select>
-                </div>
-
-                <!-- COMMON NAME FIELDS -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>First Name</label>
-                        <input type="text" name="first_name" placeholder="Juan" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Last Name</label>
-                        <input type="text" name="last_name" placeholder="Dela Cruz" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Middle Name (Optional)</label>
-                    <input type="text" name="middle_name" placeholder="Protacio">
+        <form action="{{ route('online-registration.submit') }}" method="POST" enctype="multipart/form-data" id="main-form">
+            @csrf
+            <div class="form-container">
+                <div class="form-header">
+                    <h2 id="slide-title">Institutional Access</h2>
+                    <p id="slide-subtitle">Please identify your role and provide your personal details.</p>
                 </div>
 
-                <!-- DYNAMIC SECTIONS -->
-                <div id="student-fields" class="dynamic-field-section" style="display:none;">
-                    <div class="form-row">
+                <div class="slides-wrapper">
+                    <!-- Slide 1: Applicant Category -->
+                    <div class="form-slide active" id="slide-1-content">
                         <div class="form-group">
-                            <label>Student ID</label>
-                            <input type="text" name="student_id" placeholder="2024-XXXXX">
-                        </div>
-                        <div class="form-group">
-                            <label>Course</label>
-                            <input type="text" name="course" placeholder="BSIT / BSCE">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>College / Department</label>
-                            <input type="text" name="college_dept" placeholder="COICT / COE">
-                        </div>
-                        <div class="form-group">
-                            <label>Year Level</label>
-                            <select name="year_level">
-                                <option value="" disabled selected>None</option>
-                                <option value="1">1st Year</option>
-                                <option value="2">2nd Year</option>
-                                <option value="3">3rd Year</option>
-                                <option value="4">4th Year</option>
-                                <option value="5">5th Year</option>
+                            <label>Designation <span style="color:red">*</span></label>
+                            <select name="role" id="role-selector" required>
+                                <option value="" disabled selected>Select your institutional role...</option>
+                                <option value="student">Student Enrollee</option>
+                                <option value="faculty">Academic Personnel (Teaching)</option>
+                                <option value="staff">Non-Teaching Staff / Vendor</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Access Classification</label>
-                        <select name="access_classification">
-                            <option value="student">Student Access</option>
-                        </select>
-                    </div>
-                </div>
 
-                <div id="faculty-fields" class="dynamic-field-section" style="display:none;">
-                    <div class="form-row">
+                        <div class="input-grid">
+                            <div class="form-group">
+                                <label>First Name</label>
+                                <input type="text" name="first_name" placeholder="Juan" required data-summary="Name">
+                            </div>
+                            <div class="form-group">
+                                <label>Last Name</label>
+                                <input type="text" name="last_name" placeholder="Dela Cruz" required>
+                            </div>
+                        </div>
+
                         <div class="form-group">
-                            <label>Faculty ID</label>
-                            <input type="text" name="faculty_id" placeholder="F-XXXXX">
+                            <label>Middle Name (Optional)</label>
+                            <input type="text" name="middle_name" placeholder="Protacio">
+                        </div>
+
+                        <!-- Dynamic Specifics based on role -->
+                        <div id="dynamic-applicant-fields"></div>
+
+                        <div class="input-grid">
+                            <div class="form-group">
+                                <label>Contact Number</label>
+                                <input type="text" name="contact_number" placeholder="09XXXXXXXXX" required data-summary="Phone">
+                            </div>
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input type="email" name="email_address" placeholder="juan@evsu.edu.ph" data-summary="Email">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Slide 2: Vehicle Identity -->
+                    <div class="form-slide" id="slide-2-content">
+                        <div class="form-group">
+                            <label>Vehicle Category</label>
+                            <select name="vehicle_type" required data-summary="Vehicle Type">
+                                <option value="car">Car / Sedan</option>
+                                <option value="suv">SUV / Pick-up</option>
+                                <option value="van">Van / MPV</option>
+                                <option value="motorcycle">Motorcycle</option>
+                            </select>
                         </div>
                         <div class="form-group">
-                            <label>College / Department</label>
-                            <input type="text" name="college_dept_faculty" placeholder="COICT / COE">
+                            <label>License Plate Number</label>
+                            <input type="text" name="plate_number" placeholder="ABC 1234" required style="text-transform:uppercase" data-summary="Plate No.">
+                        </div>
+                        <div class="form-group">
+                            <label>Manufacturer & Model Brand</label>
+                            <input type="text" name="make_brand" placeholder="e.g. Toyota Vios" required data-summary="Make/Model">
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>Address</label>
-                        <input type="text" name="address" placeholder="Ormoc City">
-                    </div>
-                    <div class="form-group">
-                        <label>Access Classification</label>
-                        <select name="access_classification_faculty">
-                            <option value="faculty">Faculty Access</option>
-                            <option value="service">Service Vehicle</option>
-                        </select>
-                    </div>
-                </div>
 
-                <div id="staff-fields" class="dynamic-field-section" style="display:none;">
-                    <div class="form-group">
-                        <label>Business / Stall Name</label>
-                        <input type="text" name="business_stall_name" placeholder="EVSU Canteen Stall 1">
-                    </div>
-                    <div class="form-group">
-                        <label>Access Classification</label>
-                        <select name="access_classification_staff">
-                            <option value="staff">Non-Teaching Access</option>
-                            <option value="service">Service Vehicle</option>
-                        </select>
-                    </div>
-                </div>
+                    <!-- Slide 3: Digital Verification -->
+                    <div class="form-slide" id="slide-3-content">
+                        <div class="input-grid">
+                            <div class="form-group">
+                                <label>Vehicle CR (Cert. of Registration)</label>
+                                <div class="upload-card" data-field="cr_file">
+                                    <i class="ph ph-file-pdf"></i>
+                                    <p>Select File</p>
+                                    <input type="file" name="cr_file" accept="image/*" required class="doc-upload">
+                                    <div class="loader-overlay"><div style="width:20px;height:20px;border:2px solid #741b1b;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;"></div></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Vehicle OR (Official Receipt)</label>
+                                <div class="upload-card" data-field="or_file">
+                                    <i class="ph ph-receipt"></i>
+                                    <p>Select File</p>
+                                    <input type="file" name="or_file" accept="image/*" required class="doc-upload">
+                                    <div class="loader-overlay"><div style="width:20px;height:20px;border:2px solid #741b1b;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;"></div></div>
+                                </div>
+                            </div>
+                        </div>
 
-                <!-- COMMON CONTACT FIELDS -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Contact Number</label>
-                        <input type="text" name="contact_number" placeholder="09XXXXXXXXX" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Email Address</label>
-                        <input type="email" name="email_address" placeholder="juan@example.com">
-                    </div>
-                </div>
+                        <div class="form-group">
+                            <label>Valid Driver's License</label>
+                            <div class="upload-card" data-field="license_file">
+                                <i class="ph ph-identification-card"></i>
+                                <p>Select File</p>
+                                <input type="file" name="license_file" accept="image/*" required class="doc-upload">
+                                <div class="loader-overlay"><div style="width:20px;height:20px;border:2px solid #741b1b;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;"></div></div>
+                            </div>
+                        </div>
 
-                <div class="section-divider">
-                    <h3 class="section-title">Vehicle Information</h3>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Vehicle Type</label>
-                        <select name="vehicle_type" required>
-                            <option value="" disabled selected>None</option>
-                            <option value="car">Car</option>
-                            <option value="suv">SUV</option>
-                            <option value="van">Van</option>
-                            <option value="motorcycle">Motorcycle</option>
-                        </select>
+                        <div id="role-uploads-container" class="input-grid"></div>
                     </div>
-                    <div class="form-group">
-                        <label>Plate Number</label>
-                        <input type="text" name="plate_number" placeholder="ABC 1234" required>
-                    </div>
-                </div>
 
-                <div class="form-group">
-                    <label>Make / Brand</label>
-                    <input type="text" name="make_brand" placeholder="e.g., Toyota Vios" required>
-                </div>
+                    <!-- Slide 4: Review -->
+                    <div class="form-slide" id="slide-4-content">
+                        <div class="summary-box">
+                            <div class="input-grid">
+                                <div class="summary-group"><div class="summary-label">Full Name</div><div class="summary-value" id="sum-name">---</div></div>
+                                <div class="summary-group"><div class="summary-label">Institutional Role</div><div class="summary-value" id="sum-role">---</div></div>
+                                <div class="summary-group"><div class="summary-label">Contact Details</div><div class="summary-value" id="sum-contact">---</div></div>
+                                <div class="summary-group"><div class="summary-label">Vehicle Info</div><div class="summary-value" id="sum-vehicle">---</div></div>
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <div class="summary-label">Attached Documents</div>
+                                <div id="sum-files" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:5px;"></div>
+                            </div>
+                        </div>
 
-                <div class="section-divider">
-                    <h3 class="section-title">Required Documents</h3>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Vehicle CR</label>
-                        <input type="file" name="cr_file" accept="image/*" required class="doc-input" data-type="cr_file">
-                        <div class="validation-error"></div>
-                    </div>
-                    <div class="form-group">
-                        <label>Vehicle OR</label>
-                        <input type="file" name="or_file" accept="image/*" required class="doc-input" data-type="or_file">
-                        <div class="validation-error"></div>
+                        <div class="privacy-box">
+                            <input type="checkbox" id="privacy-consent" class="privacy-checkbox">
+                            <label for="privacy-consent" class="privacy-text">
+                                I hereby authorize the collection and processing of my data in accordance with the Data Privacy Act. 
+                                I confirm that all information provided is true and correct.
+                            </label>
+                        </div>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Valid Driver's License</label>
-                    <input type="file" name="license_file" accept="image/*" required class="doc-input" data-type="license_file">
-                    <div class="validation-error"></div>
+                <div class="form-footer">
+                    <button type="button" class="btn btn-back" id="btn-back" style="visibility:hidden">
+                        <i class="ph ph-arrow-left"></i> BACK
+                    </button>
+                    <button type="button" class="btn btn-next" id="btn-next">
+                        NEXT <i class="ph ph-arrow-right"></i>
+                    </button>
+                    <button type="submit" class="btn btn-next" id="btn-submit" style="display:none" disabled>
+                        EXECUTE FINAL REGISTRATION <i class="ph-bold ph-paper-plane-tilt"></i>
+                    </button>
                 </div>
-
-                <div id="role-file-uploads">
-                    <!-- Dynamic file uploads based on role -->
-                </div>
-
-                <button type="submit" class="btn-submit">Submit Registration</button>
-            </form>
+            </div>
+        </form>
+        
+        <footer style="text-align: center; margin-top: 3rem; color: rgba(255,255,255,0.6); font-weight: 600; font-size: 0.8rem; padding-bottom: 2rem;">
+            &copy; 2026 EVSU SmartGate Intelligence. Automated Campus Transit Verification.
+        </footer>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const roleSelector = document.getElementById('role-selector');
-            const studentFields = document.getElementById('student-fields');
-            const facultyFields = document.getElementById('faculty-fields');
-            const staffFields = document.getElementById('staff-fields');
-            const roleFileUploads = document.getElementById('role-file-uploads');
-            const registrationForm = document.getElementById('registration-form');
+            let currentSlide = 1;
+            const totalSlides = 4;
+            
+            const btnNext = document.getElementById('btn-next');
+            const btnBack = document.getElementById('btn-back');
+            const btnSubmit = document.getElementById('btn-submit');
+            const privacyConsent = document.getElementById('privacy-consent');
+            
+            const slideTitle = document.getElementById('slide-title');
+            const slideSubtitle = document.getElementById('slide-subtitle');
+            
+            const titles = {
+                1: ["Institutional Access", "Please identify your role and provide your personal details."],
+                2: ["Vehicle Identity", "Define the vehicle you'll be using for campus transit."],
+                3: ["Digital Verification", "Upload scanned photos of your official documents for AI verification."],
+                4: ["Review & Consent", "One last look. Ensure all details are correct before submission."]
+            };
 
-            // Handle Laravel Session Success/Error
-            @if(session('success'))
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Registration Successful!',
-                    text: "{{ session('success') }}",
-                    confirmButtonColor: '#741b1b'
-                });
-            @endif
-
-            @if($errors->any())
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Validation Error',
-                    text: 'Please check the form for errors and try again.',
-                    confirmButtonColor: '#741b1b'
-                });
-            @endif
-
-            function updateFields() {
-                const role = roleSelector.value;
-                studentFields.style.display = role === 'student' ? 'block' : 'none';
-                facultyFields.style.display = role === 'faculty' ? 'block' : 'none';
-                staffFields.style.display = role === 'staff' ? 'block' : 'none';
-
-                const studentInputs = studentFields.querySelectorAll('input, select');
-                const facultyInputs = facultyFields.querySelectorAll('input, select');
-                const staffInputs = staffFields.querySelectorAll('input, select');
-
-                studentInputs.forEach(i => i.required = (role === 'student'));
-                facultyInputs.forEach(i => i.required = (role === 'faculty'));
-                staffInputs.forEach(i => i.required = (role === 'staff'));
-
-                let fileHtml = '';
-                if (role === 'student') {
-                    fileHtml = `
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>COM (Cert. of Matriculation)</label>
-                                <input type="file" name="com_file" accept="image/*" required class="doc-input" data-type="com_file">
-                                <div class="validation-error"></div>
-                            </div>
-                            <div class="form-group">
-                                <label>EVSU Student ID</label>
-                                <input type="file" name="student_id_file" accept="image/*" required class="doc-input" data-type="student_id_file">
-                                <div class="validation-error"></div>
-                            </div>
-                        </div>`;
-                } else if (role === 'faculty' || role === 'staff') {
-                    fileHtml = `
-                        <div class="form-group">
-                            <label>EVSU Employee ID</label>
-                            <input type="file" name="employee_id_file" accept="image/*" required class="doc-input" data-type="employee_id_file">
-                            <div class="validation-error"></div>
-                        </div>`;
-                }
-                roleFileUploads.innerHTML = fileHtml;
-                attachValidationListeners();
-            }
-
-            function attachValidationListeners() {
-                document.querySelectorAll('.doc-input').forEach(input => {
-                    if (input.dataset.listenerAttached) return;
-                    input.dataset.listenerAttached = "true";
-
-                    input.addEventListener('change', async function() {
-                        const file = this.files[0];
-                        if (!file) return;
-
-                        const type = this.dataset.type;
-                        const formGroup = this.closest('.form-group');
-                        const errorDiv = formGroup.querySelector('.validation-error');
-                        
-                        formGroup.classList.add('scanning');
-                        errorDiv.style.display = 'none';
-                        errorDiv.textContent = '';
-                        this.style.borderColor = '#e3e3e0';
-
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        formData.append('type', type);
-                        formData.append('_token', '{{ csrf_token() }}');
-
-                        try {
-                            const response = await fetch('{{ route("online-registration.validate") }}', {
-                                method: 'POST',
-                                body: formData,
-                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                            });
-
-                            const data = await response.json();
-                            
-                            if (data.success) {
-                                this.style.borderColor = '#10b981';
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Document Validated!',
-                                    text: 'Everything looks good.',
-                                    timer: 1500,
-                                    showConfirmButton: false,
-                                    toast: true,
-                                    position: 'top-end'
-                                });
-                            } else {
-                                errorDiv.textContent = data.message;
-                                errorDiv.style.display = 'block';
-                                this.value = ''; 
-                                this.style.borderColor = '#ef4444';
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Invalid Document',
-                                    text: data.message,
-                                    confirmButtonColor: '#741b1b'
-                                });
-                            }
-                        } catch (err) {
-                            console.error('Validation error:', err);
-                        } finally {
-                            formGroup.classList.remove('scanning');
-                        }
-                    });
-                });
-            }
-
-            roleSelector.addEventListener('change', updateFields);
-            updateFields();
-
-            // Handle Final Form Submission
-            registrationForm.addEventListener('submit', function(e) {
-                Swal.fire({
-                    title: 'Submitting Registration...',
-                    text: 'Please wait while we process your documents.',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
+            function updateUI() {
+                // Update Visibility
+                document.querySelectorAll('.form-slide').forEach(s => s.classList.remove('active'));
+                document.getElementById(`slide-${currentSlide}-content`).classList.add('active');
+                
+                // Stepper Update
+                document.querySelectorAll('.step').forEach((s, idx) => {
+                    const stepNum = idx + 1;
+                    s.classList.remove('active', 'completed');
+                    if (stepNum === currentSlide) {
+                        s.classList.add('active');
+                    } else if (stepNum < currentSlide) {
+                        s.classList.add('completed');
+                        s.querySelector('.step-circle').innerHTML = '<i class="ph-bold ph-check"></i>';
+                    } else {
+                        s.querySelector('.step-circle').innerText = stepNum;
                     }
                 });
-            });
+
+                // Header Update
+                slideTitle.innerText = titles[currentSlide][0];
+                slideSubtitle.innerText = titles[currentSlide][1];
+
+                // Footer Update
+                btnBack.style.visibility = (currentSlide === 1) ? 'hidden' : 'visible';
+                
+                if (currentSlide === totalSlides) {
+                    btnNext.style.display = 'none';
+                    btnSubmit.style.display = 'flex';
+                    populateSummary();
+                } else {
+                    btnNext.style.display = 'flex';
+                    btnSubmit.style.display = 'none';
+                }
+            }
+
+            btnNext.onclick = () => {
+                if(validateSlide(currentSlide)) {
+                    currentSlide++;
+                    updateUI();
+                }
+            };
+
+            btnBack.onclick = () => {
+                currentSlide--;
+                updateUI();
+            };
+
+            privacyConsent.onchange = () => {
+                btnSubmit.disabled = !privacyConsent.checked;
+                btnSubmit.style.opacity = !privacyConsent.checked ? '0.5' : '1';
+            };
+
+            function validateSlide(n) {
+                const inputs = document.getElementById(`slide-${n}-content`).querySelectorAll('input[required], select[required]');
+                let valid = true;
+                inputs.forEach(i => {
+                    if(!i.value) {
+                        valid = false;
+                        i.style.borderColor = '#ef4444';
+                    } else {
+                        i.style.borderColor = '#f1f5f9';
+                    }
+                });
+                if(!valid) {
+                    Swal.fire({ icon: 'warning', title: 'Action Required', text: 'Fill all required fields to continue.', toast:true, position:'top-end', showConfirmButton:false, timer:2000 });
+                }
+                return valid;
+            }
+
+            function populateSummary() {
+                const fName = document.getElementsByName('first_name')[0].value;
+                const lName = document.getElementsByName('last_name')[0].value;
+                const role = document.getElementById('role-selector').selectedOptions[0].text;
+                const phone = document.getElementsByName('contact_number')[0].value;
+                const email = document.getElementsByName('email_address')[0].value;
+                const vType = document.getElementsByName('vehicle_type')[0].selectedOptions[0].text;
+                const plate = document.getElementsByName('plate_number')[0].value;
+                const make = document.getElementsByName('make_brand')[0].value;
+
+                document.getElementById('sum-name').innerText = `${fName} ${lName}`;
+                document.getElementById('sum-role').innerText = role;
+                document.getElementById('sum-contact').innerText = `${phone} | ${email || 'No email'}`;
+                document.getElementById('sum-vehicle').innerText = `${vType}: ${make} (${plate.toUpperCase()})`;
+
+                // Files
+                const fileContainer = document.getElementById('sum-files');
+                fileContainer.innerHTML = '';
+                document.querySelectorAll('input[type="file"]').forEach(f => {
+                    if(f.files[0]) {
+                        const span = document.createElement('span');
+                        span.style = "background:#e2e8f0; padding:4px 10px; border-radius:30px; font-size:0.7rem; font-weight:700; color:#475569;";
+                        span.innerText = f.files[0].name;
+                        fileContainer.appendChild(span);
+                    }
+                });
+            }
+
+            // Role Dynamic Logic
+            const roleSelector = document.getElementById('role-selector');
+            const dynamicFields = document.getElementById('dynamic-applicant-fields');
+            const roleUploads = document.getElementById('role-uploads-container');
+
+            roleSelector.onchange = () => {
+                const role = roleSelector.value;
+                const roleLabel = document.querySelector('label[for="role-selector"]') || document.querySelector('#slide-1-content label');
+                let html = '';
+                let uploads = '';
+
+                // Dynamic Label Update
+                if (role === 'staff') {
+                    roleLabel.innerHTML = 'Vendor / Business Category <span style="color:red">*</span>';
+                } else {
+                    roleLabel.innerHTML = 'Institutional Designation <span style="color:red">*</span>';
+                }
+
+                if (role === 'student') {
+                    html = `
+                        <div class="input-grid">
+                            <div class="form-group"><label>Student ID Number</label><input type="text" name="student_id" placeholder="e.g. 2024-10234" required></div>
+                            <div class="form-group"><label>Course / Program</label><input type="text" name="course" placeholder="e.g. BS in Information Technology" required></div>
+                            <div class="form-group"><label>College / Department</label><input type="text" name="college_dept" placeholder="e.g. COICT" required></div>
+                            <div class="form-group">
+                                <label>Year Level</label>
+                                <select name="year_level" required>
+                                    <option value="" disabled selected>Select year...</option>
+                                    <option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option><option>5th Year</option>
+                                </select>
+                            </div>
+                        </div><input type="hidden" name="access_classification" value="student">`;
+                    uploads = `
+                        <div class="form-group">
+                            <label>COR (Cert. of Registration)</label>
+                            <div class="upload-card" data-field="cor_file">
+                                <i class="ph ph-certificate"></i><p>Select COR Image</p>
+                                <input type="file" name="cor_file" accept="image/*" required class="doc-upload">
+                                <div class="loader-overlay"><div class="spinner"></div></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Student ID (Front)</label>
+                            <div class="upload-card" data-field="student_id_file">
+                                <i class="ph ph-address-book"></i><p>Select ID Image</p>
+                                <input type="file" name="student_id_file" accept="image/*" required class="doc-upload">
+                                <div class="loader-overlay"><div class="spinner"></div></div>
+                            </div>
+                        </div>`;
+                } else if (role === 'faculty') {
+                   html = `
+                        <div class="input-grid">
+                             <div class="form-group"><label>Faculty ID Number</label><input type="text" name="faculty_id" placeholder="F-XXXXX" required></div>
+                             <div class="form-group"><label>Academic Department</label><input type="text" name="college_dept_faculty" placeholder="e.g. College of Engineering" required></div>
+                        </div>
+                        <div class="form-group"><label>Home/Local Address</label><input type="text" name="address" placeholder="Complete address for records" required></div>
+                        <input type="hidden" name="access_classification_faculty" value="faculty">`;
+                   uploads = `
+                        <div class="form-group full-width">
+                            <label>Faculty Identity Card</label>
+                            <div class="upload-card" data-field="employee_id_file">
+                                <i class="ph ph-briefcase"></i><p>Select ID Image</p>
+                                <input type="file" name="employee_id_file" accept="image/*" required class="doc-upload">
+                                <div class="loader-overlay"><div class="spinner"></div></div>
+                            </div>
+                        </div>`;
+                } else if (role === 'staff') {
+                   html = `
+                        <div class="input-grid">
+                             <div class="form-group"><label>Business / Stall Name</label><input type="text" name="business_stall_name" placeholder="e.g. Aling Nena's Canteen" required></div>
+                             <div class="form-group"><label>Stall / Unit Number</label><input type="text" name="vendor_address" placeholder="e.g. Canteen Stall #3, Ground Floor" required></div>
+                        </div>
+                        <input type="hidden" name="access_classification_staff" value="staff">`;
+                   uploads = `
+                        <div class="form-group full-width">
+                            <label>Proof of Identity / Business Permit</label>
+                            <div class="upload-card" data-field="employee_id_file">
+                                <i class="ph ph-storefront"></i><p>Select ID or Permit Image</p>
+                                <input type="file" name="employee_id_file" accept="image/*" required class="doc-upload">
+                                <div class="loader-overlay"><div class="spinner"></div></div>
+                            </div>
+                        </div>`;
+                }
+
+                dynamicFields.innerHTML = html;
+                roleUploads.innerHTML = uploads;
+                attachDocListeners();
+            };
+
+            function attachDocListeners() {
+                document.querySelectorAll('.doc-upload').forEach(input => {
+                    input.onchange = async function() {
+                        const file = this.files[0];
+                        const card = this.closest('.upload-card');
+                        const type = card.dataset.field; // Wait, field name is cr_file, cor_file etc
+                        
+                        // Map type to controller expectation
+                        let docType = type;
+                        if(type === 'cor_file') docType = 'cor_file'; 
+
+                        if(!file) { card.classList.remove('verified'); return; }
+
+                        const loader = card.querySelector('.loader-overlay');
+                        loader.style.display = 'flex';
+
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        fd.append('type', docType);
+                        fd.append('_token', '{{ csrf_token() }}');
+
+                        try {
+                            const res = await fetch('{{ route("online-registration.validate") }}', { method:'POST', body:fd });
+                            const data = await res.json();
+                            if(data.success) {
+                                card.classList.add('verified');
+                                card.querySelector('p').innerText = "VERIFIED: " + file.name;
+                                Swal.fire({ toast:true, position:'top-end', icon:'success', title:'File match confirmed.', showConfirmButton:false, timer:1500 });
+                            } else {
+                                this.value = ''; card.classList.remove('verified'); card.querySelector('p').innerText = "Select File";
+                                Swal.fire({ icon:'error', title:'Scan Failed', text: data.message });
+                            }
+                        } catch(e) { console.error(e); } finally { loader.style.display = 'none'; }
+                    };
+                });
+            }
+
+            attachDocListeners();
+
+            document.getElementById('main-form').onsubmit = () => {
+                Swal.fire({ title:'SECURE SUBMISSION...', text:'Please wait while we encrypt and primary-save your registration.', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+            };
         });
     </script>
-        </div>
-    </div>
+
+    <style> @keyframes spin { to { transform: rotate(360deg); } } </style>
 </body>
 </html>
