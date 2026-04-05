@@ -4,8 +4,8 @@
 FROM composer:2.7 as composer_stage
 WORKDIR /app
 COPY composer*.json ./
-# Note: composer.lock must match composer.json exactly, or run with --ignore-platform-reqs if unsure.
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+# Use --ignore-platform-reqs since we don't have a lock file and some extensions might be checked during install
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --ignore-platform-reqs
 COPY . .
 RUN composer dump-autoload --optimize --no-dev
 
@@ -33,9 +33,11 @@ RUN apk add --no-cache \
     nginx \
     python3 \
     py3-pip \
-    libpng-dev \
     libzip-dev \
     libxml2-dev \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
     zip \
     unzip \
     git \
@@ -46,8 +48,9 @@ RUN apk add --no-cache \
     oniguruma-dev \
     icu-dev
 
-# 2. Install PHP Extensions (Laravel Essentials)
-RUN docker-php-ext-install \
+# 2. Configure and Install PHP Extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
+    docker-php-ext-install \
     pdo_mysql \
     mbstring \
     exif \
