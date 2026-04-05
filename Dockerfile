@@ -69,7 +69,10 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
 WORKDIR /var/www/html
 
 # 4. Copy backend and frontend from previous stages
+# Cache bust with app version matching package.json
+ARG APP_VERSION=1.0.5
 COPY --from=composer_stage --chown=www-data:www-data /app /var/www/html
+# Explicitly copy build folder last to ensure it overwrites everything in public/build
 COPY --from=node_stage --chown=www-data:www-data /app/public/build /var/www/html/public/build
 
 # 5. Setup Python Requirements for bridge service
