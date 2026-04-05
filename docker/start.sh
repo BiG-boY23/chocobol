@@ -5,12 +5,22 @@
 sed -i "s/\[PORT_PLACEHOLDER\]/${PORT:-8080}/g" /etc/nginx/http.d/default.conf
 
 # ──────────────────────────────────────────────
-# 1. OPTIMIZE LARAVEL
+# 1. DATABASE & OPTIMIZATION
 # ──────────────────────────────────────────────
-echo "[LARAVEL] Optimizing caches..."
-# Run migrations if database is ready (optional - user can opt to run manually)
-# php artisan migrate --force
+echo "[DB] Checking database connectivity..."
+# Simple loop to wait for the database (optional but recommended)
+NEXT_WAIT_TIME=0
+MAX_RETRIES=15
+until php artisan db:monitor --max=100 > /dev/null 2>&1 || [ $NEXT_WAIT_TIME -eq $MAX_RETRIES ]; do
+  echo "[DB] Waiting for database connection... ($((NEXT_WAIT_TIME+1))/$MAX_RETRIES)"
+  sleep 2
+  NEXT_WAIT_TIME=$((NEXT_WAIT_TIME+1))
+done
 
+echo "[DB] Running migrations..."
+php artisan migrate --force
+
+echo "[LARAVEL] Optimizing caches..."
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
