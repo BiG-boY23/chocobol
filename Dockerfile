@@ -1,13 +1,13 @@
 # ──────────────────────────────────────────────
 # STAGE 1: COMPOSER (PHP Dependencies)
 # ──────────────────────────────────────────────
-FROM composer:2.7 as composer_stage
+FROM composer:latest as composer_stage
 WORKDIR /app
 COPY composer*.json ./
 # Use --ignore-platform-reqs since we don't have a lock file and some extensions might be checked during install
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --ignore-platform-reqs
 COPY . .
-RUN composer dump-autoload --optimize --no-dev
+RUN composer dump-autoload --optimize --no-dev --ignore-platform-reqs
 
 # ──────────────────────────────────────────────
 # STAGE 2: NODE (Vite Frontend Assets)
@@ -22,7 +22,7 @@ RUN npm run build
 # ──────────────────────────────────────────────
 # STAGE 3: FINAL PRODUCTION IMAGE
 # ──────────────────────────────────────────────
-FROM php:8.2-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 LABEL name="SmartGate Hybrid Service"
 LABEL type="Laravel-Python-Deployment"
