@@ -15,9 +15,13 @@ RUN composer dump-autoload --optimize --no-dev --ignore-platform-reqs
 FROM node:20-alpine as node_stage
 WORKDIR /app
 COPY package*.json ./
+# Explicitly run install
 RUN npm install
 COPY . .
+# Explicitly run build for production
 RUN npm run build
+# Ensure public/build exists and contains a manifest
+RUN ls -la public/build || echo "Build directory NOT found!"
 
 # ──────────────────────────────────────────────
 # STAGE 3: FINAL PRODUCTION IMAGE
@@ -91,6 +95,8 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 
 # 8. Environment Handling for Railway
 # Railway sets $PORT automatically for web traffic
+ENV APP_ENV=production
+ENV APP_DEBUG=false
 ENV PORT=8080
 EXPOSE $PORT
 
