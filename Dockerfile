@@ -74,6 +74,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt --break-system-packages || true
 
 # 6. Setup Configuration
+RUN rm -rf /etc/nginx/http.d/*
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
