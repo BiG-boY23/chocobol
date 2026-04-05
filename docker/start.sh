@@ -18,6 +18,7 @@ until php artisan db:monitor --max=100 > /dev/null 2>&1 || [ $NEXT_WAIT_TIME -eq
 done
 
 echo "[DB] Running migrations..."
+php artisan optimize:clear
 php artisan migrate --force
 
 echo "[LARAVEL] Optimizing caches..."

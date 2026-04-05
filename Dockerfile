@@ -14,12 +14,8 @@ RUN composer dump-autoload --optimize --no-dev --ignore-platform-reqs
 # ──────────────────────────────────────────────
 FROM node:20-alpine as node_stage
 WORKDIR /app
-COPY package*.json ./
-# Explicitly run install
-RUN npm install
 COPY . .
-# Explicitly run build for production
-RUN npm run build
+RUN npm install && npm run build
 # DEBUG: Verify compiled assets
 RUN find public/build -type f || echo "Build failed to generate files!"
 
@@ -70,7 +66,7 @@ WORKDIR /var/www/html
 
 # 4. Copy backend and frontend from previous stages
 # Cache bust with app version matching package.json
-ARG APP_VERSION=1.0.5
+ARG APP_VERSION=1.0.6
 COPY --from=composer_stage --chown=www-data:www-data /app /var/www/html
 # Explicitly copy build folder last to ensure it overwrites everything in public/build
 COPY --from=node_stage --chown=www-data:www-data /app/public/build /var/www/html/public/build
