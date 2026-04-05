@@ -20,8 +20,8 @@ RUN npm install
 COPY . .
 # Explicitly run build for production
 RUN npm run build
-# Ensure public/build exists and contains a manifest
-RUN ls -la public/build || echo "Build directory NOT found!"
+# DEBUG: Verify compiled assets
+RUN find public/build -type f || echo "Build failed to generate files!"
 
 # ──────────────────────────────────────────────
 # STAGE 3: FINAL PRODUCTION IMAGE
@@ -69,8 +69,8 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
 WORKDIR /var/www/html
 
 # 4. Copy backend and frontend from previous stages
-COPY --from=composer_stage /app /var/www/html
-COPY --from=node_stage /app/public /var/www/html/public
+COPY --from=composer_stage --chown=www-data:www-data /app /var/www/html
+COPY --from=node_stage --chown=www-data:www-data /app/public/build /var/www/html/public/build
 
 # 5. Setup Python Requirements for bridge service
 COPY requirements.txt .
@@ -88,7 +88,7 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
     chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache && \
     # Fix Nginx permissions to run as non-root / unprivileged
     mkdir -p /var/lib/nginx/tmp /var/log/nginx && \
-    chown -R www-data:www-data /var/lib/nginx /var/log/nginx /etc/nginx/http.d && \
+    chown -R www-data:www-data /var/lib/nginx /var/log/nginx /etc/nginx/http.d /var/www/html/public && \
     chmod -R 777 /var/lib/nginx /var/log/nginx && \
     # Remove default user if it causes permission issues in unprivileged containers
     sed -i 's/user nginx;//g' /etc/nginx/nginx.conf
