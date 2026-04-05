@@ -78,13 +78,19 @@ COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
-# 7. Configure Permissions
+# 7. Configure Permissions and Nginx User
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && \
-    chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+    chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache && \
+    # Fix Nginx permissions to run as non-root / unprivileged
+    mkdir -p /var/lib/nginx/tmp /var/log/nginx && \
+    chown -R www-data:www-data /var/lib/nginx /var/log/nginx /etc/nginx/http.d && \
+    chmod -R 777 /var/lib/nginx /var/log/nginx && \
+    # Remove default user if it causes permission issues in unprivileged containers
+    sed -i 's/user nginx;//g' /etc/nginx/nginx.conf
 
 # 8. Environment Handling for Railway
 # Railway sets $PORT automatically for web traffic
-ENV PORT=80
+ENV PORT=8080
 EXPOSE $PORT
 
 # 9. Start Laravel and Python Services via startup script
