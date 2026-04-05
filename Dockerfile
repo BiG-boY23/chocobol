@@ -3,7 +3,7 @@
 # ──────────────────────────────────────────────
 FROM composer:2.7 as composer_stage
 WORKDIR /app
-COPY composer.json composer.lock ./
+COPY composer*.json ./
 # Note: composer.lock must match composer.json exactly, or run with --ignore-platform-reqs if unsure.
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 COPY . .
@@ -14,7 +14,7 @@ RUN composer dump-autoload --optimize --no-dev
 # ──────────────────────────────────────────────
 FROM node:20-alpine as node_stage
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build

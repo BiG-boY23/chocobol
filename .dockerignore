@@ -5,8 +5,6 @@
 .editorconfig
 .vscode
 php_errors.log
-composer.lock
-package-lock.json
 node_modules
 vendor
 public/hot
